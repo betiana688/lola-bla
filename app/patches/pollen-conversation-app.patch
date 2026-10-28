@@ -1,0 +1,24 @@
+diff --git a/src/reachy_mini_conversation_app/main.py b/src/reachy_mini_conversation_app/main.py
+index 7130ce7..a179c7a 100644
+--- a/src/reachy_mini_conversation_app/main.py
++++ b/src/reachy_mini_conversation_app/main.py
+@@ -239,6 +239,7 @@ def run(
+         handler_factory=build_handler,
+         startup_voice=startup_settings.voice,
+     )
++    deps.stream_manager = stream_manager  # lets tools mute/unmute the live mic directly
+ 
+     # The page is served immediately, so the API must be live before the slow startup work below.
+     if effective_settings_app is not None:
+diff --git a/src/reachy_mini_conversation_app/tools/core_tools.py b/src/reachy_mini_conversation_app/tools/core_tools.py
+index f4223bc..ec0b81b 100644
+--- a/src/reachy_mini_conversation_app/tools/core_tools.py
++++ b/src/reachy_mini_conversation_app/tools/core_tools.py
+@@ -44,6 +44,7 @@ class ToolDependencies:
+     camera_enabled: bool = False
+     motion_duration_s: float = 1.0
+     go_to_sleep: Callable[[], dict[str, Any]] | None = None
++    stream_manager: Any = None  # LocalStream instance - lets tools mute/unmute the live mic
+ 
+ 
+ class ToolSpec(TypedDict):

@@ -11,8 +11,8 @@
 - Send alerts
 - Remove unnecessary tools from Reachy (e.g. web search)
 - Upgrade `reachy-mini-daemon` to match SDK 1.11.0 (deferred, needs careful system-service handling)
-- Pin `reachy_mini_conversation_app` and `signal-cli-rest-api` to specific versions
-- Upstream or track as a diff the two local patches to the conversation engine
+- Pin `signal-cli-rest-api` to a specific version
+- Port the conversation-app patch to the latest Pollen version, or upstream it (currently tracked in `app/patches/`, tested against commit `215880b`)
 - Revisit a single audio-native model with tool calling once more mature (e.g. Audex-30B or successors)
 - Deeper safety hardening beyond the personality profile, if real usage suggests it's needed
 - Scope memory facts per profile (or disable for the `lola` profile); today a fact learned under any profile can surface in any other

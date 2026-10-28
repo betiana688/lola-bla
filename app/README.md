@@ -21,9 +21,18 @@ The running Lola-Bla code. It plugs into a clone of Pollen Robotics' [`reachy_mi
 |---|---|
 | `LOLA_SIGNAL_NUMBER` | The linked Signal account number, e.g. `+49...` |
 
-## Not in this repo yet
+## Patches to the conversation app
 
-- The two local patches to the conversation app (`main.py`, `tools/core_tools.py`) that expose the live audio session to tools. Without them, `deps.stream_manager` is missing and recording fails.
+[`patches/pollen-conversation-app.patch`](patches/pollen-conversation-app.patch) adds two lines (`main.py`, `tools/core_tools.py`) that expose the live audio session to tools as `deps.stream_manager`. Without it, recording fails.
+
+Tested against Pollen's commit `215880b` (2026-09-11, between v1.0.1 and v1.1.0). It does not apply to newer versions as-is. To set up a clone at that version:
+
+```bash
+git clone https://github.com/pollen-robotics/reachy_mini_conversation_app.git
+cd reachy_mini_conversation_app
+git checkout 215880b
+git apply /path/to/lola-bla/app/patches/pollen-conversation-app.patch
+```
 
 ## Diagrams
 
