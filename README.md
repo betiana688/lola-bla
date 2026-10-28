@@ -58,7 +58,7 @@ chmod 700 local_data local_data/audio
 chmod 600 local_data/lola.db local_data/messaging_agent.py local_data/messaging_executor.py
 ```
 
-Set your own Signal number in `local_data/messaging_executor.py`, then register approved groups/contacts directly via `sqlite3` (a proper console is on the way — see Status above).
+Copy the files from [`app/`](app/README.md) into the clone, set your Signal number with `export LOLA_SIGNAL_NUMBER=+49...`, then register approved groups/contacts directly via `sqlite3` (a proper console is on the way — see Status above).
 
 Run it:
 
@@ -79,8 +79,9 @@ Everything else lives in [docs/](docs/README.md): user stories, architecture and
 ## Repository layout
 
 ```
-app/              Conversation app code (messaging tool, agent, executor)
+app/              Conversation app code (messaging tool, agent, executor, schema)
 console/          Configuration console (Story 3)
+prototype/        First, fully local version (superseded, kept for reference)
 profiles/lola/    The conversational agent's personality and safety profile
 docs/             Requirements, architecture, references
 ```

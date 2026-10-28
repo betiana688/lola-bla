@@ -4,6 +4,8 @@ SQLite database at `~/lola-bla-app/app/data/lola.db`, created from `~/lola-bla-a
 
 ## Schema
 
+The source of truth is [`app/local_data/schema.sql`](../../app/local_data/schema.sql), which also has the `audit_log` table. The excerpt below predates it.
+
 ```sql
 CREATE TABLE groups (
   id TEXT PRIMARY KEY,
