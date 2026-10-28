@@ -1,0 +1,24 @@
+# Private data: never commit
+signal-data/
+recordings/
+*.wav
+*.ogg
+*.m4a
+config.local.*
+.env
+
+# Models (large)
+models/
+*.onnx
+*.bin
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
