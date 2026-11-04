@@ -104,4 +104,4 @@
 ### Console step 11 (2026-11-04)
 - Log retention: both logs only grow, but slowly: on 2026-11-04 the audit log had 132 rows since 25 September and the activity log 10 since 28 October. Not urgent. Decide later how long to keep entries and how to trim them safely; the console deliberately cannot delete them.
 - The mask on the Logs page is a safety net. If a real log line ever shows a number or an ID after masking, fix the code that wrote it.
-- Not yet tried: the Logs page in a browser against the real logs.
+- Tried in a browser on 2026-11-04 on a copy of the database with the real logs, by the author's report: it looked right, and no full numbers or IDs were seen.
