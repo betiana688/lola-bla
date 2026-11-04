@@ -12,17 +12,26 @@ This project was also my capstone during maternity leave — a hands-on way to a
 
 ## Built with Claude
 
-I built this together with [Claude](https://claude.ai), Anthropic's AI assistant, and part of the point was to find out how far I could get working that way. Claude proposed the designs and wrote most of the code, tests and documentation. I made the decisions, ran everything on the robot, and tested it with a real phone, a real browser and real hardware.
+I built this together with [Claude](https://claude.ai), Anthropic's AI assistant, and part of the point was to find out how far I could get working that way.
 
-How we worked, and what I learned:
+**What I did.** I wrote the requirements: the user stories and acceptance criteria, including the performance, security and privacy story, and the purpose behind them. I decided where the lines are, and I questioned Claude's designs whenever they crossed one. I ran everything on the robot with a real phone and a real browser, and I decided what counted as done.
 
-- **Spec first, then build, then docs in the same step.** User stories and acceptance criteria came before any code. When I let the docs slip, they fell behind within days, so updating them with each step is now a rule.
+**What Claude did.** It drafted designs, code, tests and documentation, explained the options, and checked its own work against the output I pasted back from the robot.
+
+**Where I pushed back, and the design changed**
+
+- Claude's first sketches blurred the line between the robot and the cloud, and leaned towards the cloud. I insisted that the tools, the data and every recording of a message stay on the robot. Today the cloud AI hears the live conversation and is told only names, counts and times about the messages. The recordings, the contacts and the database never leave the Pi.
+- I questioned why we still needed local speech recognition and speech synthesis once an AI could do both. That led to building on Pollen Robotics' real-time conversation app, which answers quickly enough for a small child. The local version took 15 to 30 seconds per turn.
+- I proposed building child safety into the personality of the one agent that talks to the child, instead of a second checking agent, which cannot sit in the middle of a real-time stream.
+- I asked for an audit trail, a password-protected console with the password recovery handled on the Pi, and the docs updated in the same step as each piece of code, instead of afterwards.
+
+**What I learned**
+
+- **Spec first, then build, then docs in the same step.** When I let the docs slip, they fell behind within days.
 - **Small steps, each verified.** Every piece was tested on its own (offline tests with fakes, then the real thing) before the next one was built on top.
 - **The assistant makes mistakes, and the process catches them.** A security header made the console refuse every sign-in (found in a real browser, now pinned by a test). Asking for the group "Test" also played "Another test" (found in a live run). Messages were once marked as played when playback had failed. Nothing counted as done until it ran.
-- **Safety by structure, not by promise.** Data and secrets live outside the repo so they cannot be committed by accident, a scan runs before every push, and the cloud AI only ever sees names, counts and timestamps.
+- **Safety by structure, not by promise.** Data and secrets live outside the repo so they cannot be committed by accident, and a scan runs before every push.
 - **It only knows what I show it.** Claude cannot see my screen or my robot. Everything it knew about what actually happened came from the output I pasted back, so those pastes were part of the engineering.
-
-If you want to try this yourself: ask for the spec before the code, make it show its work, test on the real thing, and keep the docs moving with the code.
 
 ## What it does
 
@@ -35,7 +44,7 @@ If you want to try this yourself: ask for the spec before the code, make it show
 Two things happen in two different places, deliberately kept apart:
 
 - **The conversation itself** — hearing the child, understanding her, speaking back — happens through a real-time cloud AI service. This is what makes it feel natural and fast.
-- **Everything sensitive — the actual message content, contacts, who's allowed to talk to whom, and the message audio itself — never leaves the robot.** Recording, storage, and sending all happen locally. The cloud service is only ever told the *outcome* of an action ("message sent" / "here are 2 new messages from Grandma"), never given raw audio, names of specific people, or database access.
+- **Everything sensitive — the actual message content, contacts, who's allowed to talk to whom, and the message audio itself — never leaves the robot.** Recording, storage, and sending all happen locally. The cloud service is only ever told the *outcome* of an action ("message sent" / "here are 2 new messages from Grandma"), and never the message audio, phone numbers or database access.
 
 Concretely, the robot uses **two separate AI agents**: one handles the live conversation and personality; the other, invoked only internally, decides *what* the child is asking for and hands that decision to plain, local code that actually does it — record, check, or send. The two never talk to each other directly, and neither one is ever handed more information than it strictly needs to do its one job.
 
