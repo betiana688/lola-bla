@@ -89,3 +89,4 @@
 - Decide how to close the live-conversation gap: ask Pollen and Hugging Face in writing, or run the real-time voice engine at home. See [cloud-privacy-check.md](reference/cloud-privacy-check.md).
 - Messaging assistant: use the local rules only (no cloud call), or pin one provider and read its policy.
 - Review the README's privacy wording once decided, so it says exactly what leaves the robot.
+- Decision (2026-11-04): documented and accepted for now. Revisit before any public release or wider use.

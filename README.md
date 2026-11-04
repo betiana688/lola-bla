@@ -50,6 +50,13 @@ Concretely, the robot uses **two separate AI agents**: one handles the live conv
 
 On top of that: only the family administrator (me) can access the underlying data or logs, no matter where they're stored; every access to sensitive data is recorded in an audit trail I can review; and being a member of a family Signal group isn't enough on its own to be trusted — every person has to be explicitly approved before their messages count.
 
+## Privacy: what leaves the robot (read this before you build one)
+
+- **The live conversation** runs on Pollen's hosted real-time voice server by default. While the app is running, everything the microphone hears goes there, including speech that is not meant for the robot, except while a message is being recorded. I found no published statement about how long that service keeps audio, whether it trains on it, or whether people review it.
+- **The messaging assistant** sends only a short task text (sometimes a group or sender name) to Hugging Face's Inference service. Hugging Face says it does not store it or train on it, but the provider behind it is not pinned, so that provider's policy is unknown.
+- **Message recordings, contacts and the database** never leave the Pi.
+- I know about this and have accepted it for now. If you build this for a child, decide for yourself. The options (asking the providers in writing, or running the voice engine at home) and the sources are in [docs/reference/cloud-privacy-check.md](docs/reference/cloud-privacy-check.md).
+
 ## Status
 
 - ✅ Reading messages
@@ -102,6 +109,7 @@ The script clones Pollen's app at the commit we run, applies our two-line patch,
 - The console cannot yet unlink Signal, manage groups and contacts, or show logs: approvals are still managed by hand
 - The console password minimum is short on purpose (5 characters); the sign-in lockout (5 tries, 15 minutes) is the protection
 - The messaging assistant needs Hugging Face credits; without them a simple local fallback keeps messaging working
+- The live conversation's cloud service has no published data-retention statement that I could find (see the privacy section above)
 - Fixed maximum recording length (30s), with automatic stop after ~5 seconds of silence
 - Two small local patches to the underlying conversation engine are kept as a patch file (`app/patches`) and are not yet upstreamed
 

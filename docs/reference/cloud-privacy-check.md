@@ -1,5 +1,7 @@
 # Cloud privacy check (Story 4c)
 
+> **If you want to build this for a child, read this page first.** The author knows about the gaps below and has accepted them for now. You may decide differently.
+
 Checked on 2026-11-04 from public pages only. Nothing was confirmed with the providers themselves, so this is a reading of what they publish, not a guarantee.
 
 ## What goes to the cloud
