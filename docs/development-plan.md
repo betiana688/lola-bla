@@ -81,7 +81,7 @@ Rather than patch around the local performance ceiling, the app was rebuilt on a
 6. Put everything in one repo: our files inside Pollen's clone are links into it, Pollen's app is pinned to the commit we run plus a two-line patch, data and secrets stay outside the repo, `app/install.sh` rebuilds a fresh install and `save.sh` scans for secrets before every push.
 7. Fixed group matching so "Test" never plays "Another test".
 8. Console: the first user from the Pi (step 5); HTTPS sign-in with lockout, signed sessions and CSRF protection (step 6); change password (step 7); the Signal page with linking by QR code (step 8a). Real-browser testing caught a bug the offline tests missed (the Origin check combined with `Referrer-Policy: no-referrer`), and linking was tested against a throwaway Signal API and a copy of the database, never the live ones.
-9. Console step 8b: unlinking is a guided action (the robot is marked unlinked first, then unregister, then delete the app's local Signal data), because only the phone can revoke a linked device. An accident during testing (the device removed before the console saw the link) led to a clearer message on the link page: a code works only once.
+9. Console step 8b: unlinking is a guided action (the robot is marked unlinked first, then unregister, then delete the app's local Signal data), because only the phone can revoke a linked device. An accident during testing (the device removed before the console saw the link) led to a clearer message on the link page: a code works only once. Tested live against a throwaway Signal API in both orders (console first; phone first, then Clean up).
 
 ## 4. Architecture
 

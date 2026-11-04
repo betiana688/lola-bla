@@ -81,7 +81,7 @@
 - Read and record the data-retention and training policies of the two cloud services: Pollen's hosted real-time conversation proxy (it hears the child's voice) and Hugging Face Inference Providers (the messaging assistant). Story 4c items 1 and 3 depend on it.
 
 ### Console step 8b (2026-11-04)
-- Not yet tested live: unlinking against a real throwaway Signal API in both orders (console first, then the phone; the phone first, then Clean up). The offline tests cover the logic.
+- Tested live on 2026-11-04 against a throwaway Signal API and a copy of the database, in both orders (console first; phone first, then Clean up). It worked as expected, by the author's report. The exact wording the status page showed after a removal on the phone was not recorded.
 - A link code works only once. Observed 2026-11-04: scanning the same code a second time failed with an error in Signal.
 - Idea: show on the status page when the robot's device was last seen (the device list has `last_seen_timestamp`).
 
