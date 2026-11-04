@@ -93,5 +93,5 @@
 
 ### Console step 9 (2026-11-04)
 - Step 10 (contacts): the real group list has 89 member entries, 65 of them Signal UUIDs and 24 phone numbers. Names are known only for contacts in the contact list, and only a few of those carry a UUID, so most members cannot be named automatically. To be designed next.
-- Not yet tested live: the Add flow against the real group list (read-only look done), and that the robot picks up group changes on its next check.
+- Tried in a browser on 2026-11-04 on a copy of the database with the real Signal group list: adding a group and removing it worked, by the author's report. Not individually confirmed: rename, deactivate and activate, the wrong-word and wrong-password refusals, and that the robot picks up group changes on its next check without a restart.
 - Possible race: a message arriving while its group is being removed.
