@@ -165,7 +165,7 @@ Key decisions: Signal's own group identifier is stored in its raw form and conve
 | 1 — Reading messages | ✅ Complete |
 | 2 — Sending messages | ✅ Complete |
 | 3 — Configuration console | 🔨 In progress: sign-in, change password, Signal linking and unlinking are built; groups, contacts and logs are next |
-| 4 — Performance, security, privacy | ✅ Built and tested. One check is still open: the cloud providers' data-retention and training policies (Story 4c, items 1 and 3) have not been checked yet |
+| 4 — Performance, security, privacy | ✅ Built and tested. Story 4c is only partly verified: the cloud services' data policies were read on 2026-11-04, and nothing published could be found for the live conversation (see the [cloud privacy check](reference/cloud-privacy-check.md)) |
 
 ## 7. Backlog
 

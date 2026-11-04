@@ -24,6 +24,7 @@
 
 - [Database](reference/database.md): `sqlite3` commands for groups, contacts, messages, logs
 - [signal-cli-rest-api](reference/signal-cli-rest-api.md): endpoints for linking, receiving, sending, and what our own tests showed
+- [Cloud privacy check](reference/cloud-privacy-check.md): what the two cloud services publish about data (Story 4c)
 
 ## Agent profile
 

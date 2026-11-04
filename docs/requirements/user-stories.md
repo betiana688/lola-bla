@@ -5,7 +5,7 @@
 | 1 — Reading messages | ✅ Complete |
 | 2 — Replying to messages | ✅ Complete |
 | 3 — Configuring the app | 🔨 In progress: sign-in, password, Signal linking and unlinking are built; groups, contacts and logs are next |
-| 4 — Performance, security, privacy | ✅ Built and tested. One check is still open: the cloud providers' data-retention and training policies (Story 4c, items 1 and 3) have not been checked yet |
+| 4 — Performance, security, privacy | ✅ Built and tested. Story 4c is only partly verified: the cloud services' data policies were read on 2026-11-04, and nothing published could be found for the live conversation (see the [cloud privacy check](../reference/cloud-privacy-check.md)) |
 
 ## Story 1: Reading messages
 
@@ -92,4 +92,4 @@ As Betiana, I want confidence that sensitive data isn't exposed to anyone beyond
 4. An audit trail records access to where sensitive data is stored (database, contacts, logs, audio recordings). The exact mechanism is an implementation decision.
 5. The audit trail is itself sensitive data, subject to Story 4b's access-control rule.
 
-**Story 4c status (2026-11-04).** Items 1 and 3 are not verified yet. The live conversation sends the child's voice to a cloud real-time service (Pollen's hosted proxy on Hugging Face), and the messaging assistant calls Hugging Face Inference. Their retention and training policies still have to be read and recorded here. Items 2, 4 and 5 are built.
+**Story 4c status (2026-11-04, researched).** Only partly verified. The messaging assistant: Hugging Face says it does not train on user data and does not store the request or response when routing, and that each downstream provider's own policy applies; the provider is not pinned, so its policy is unknown. The live conversation (Pollen's hosted real-time server, which hears the child's voice): no statement on retention, training or human review was found, and it is a shared hosted server, so item 2 is not met either, in this reading. Details and sources: [cloud privacy check](../reference/cloud-privacy-check.md).

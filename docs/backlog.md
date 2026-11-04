@@ -84,3 +84,8 @@
 - Not yet tested live: unlinking against a real throwaway Signal API in both orders (console first, then the phone; the phone first, then Clean up). The offline tests cover the logic.
 - A link code works only once. Observed 2026-11-04: scanning the same code a second time failed with an error in Signal.
 - Idea: show on the status page when the robot's device was last seen (the device list has `last_seen_timestamp`).
+
+### Privacy check result (2026-11-04)
+- Decide how to close the live-conversation gap: ask Pollen and Hugging Face in writing, or run the real-time voice engine at home. See [cloud-privacy-check.md](reference/cloud-privacy-check.md).
+- Messaging assistant: use the local rules only (no cloud call), or pin one provider and read its policy.
+- Review the README's privacy wording once decided, so it says exactly what leaves the robot.

@@ -97,3 +97,4 @@ Known gaps added 2026-11-04:
 
 - The messaging assistant needs Hugging Face Inference credits; at zero, a local keyword fallback takes over.
 - No Keycloak yet; the console password is short on purpose (5 characters).
+- The Hugging Face provider that serves the messaging assistant is chosen automatically (not pinned), so its data policy is unknown; see the [cloud privacy check](reference/cloud-privacy-check.md).
