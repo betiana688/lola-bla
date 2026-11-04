@@ -101,6 +101,8 @@ Observed against signal-cli-rest-api 0.100 (`MODE=native`) while building the co
 | `GET /v1/qrcodelink/raw?device_name=NAME` | JSON `{"device_link_uri": "sgnl://linkdevice?..."}` |
 | Linking the same account again after unlinking | Works, and the new device can get the same ID as before |
 | Asking for a second QR code after cancelling the first | Works: the second code links |
+| `POST /v1/unregister/{number}` for a number that is already not registered | 400 "not registered" (harmless: there was nothing to unregister) |
+| Scanning the same link code a second time, after the device it created was removed on the phone | An error in Signal on the phone (a code seems to work only once) |
 
 Other things worth knowing:
 

@@ -1,5 +1,6 @@
 """A small client for the local signal-cli-rest-api. Standard library only.
-Error messages never contain a phone number or a link code."""
+Error messages never contain a phone number or a link code. The client has no way to delete
+the Signal account itself: unregister always sends delete_account=false."""
 
 import json
 import os
@@ -21,18 +22,25 @@ class NotRegistered(SignalApiError):
     """The Signal API says this number is not registered."""
 
 
+def _number_path(number):
+    return urllib.parse.quote(number, safe="+")
+
+
 class SignalApi:
     def __init__(self, base_url=None, timeout=TIMEOUT_S):
         self.base = (base_url or os.environ.get("LOLA_SIGNAL_API", DEFAULT_URL)).rstrip("/")
         self.timeout = timeout
 
-    def _get(self, path):
+    def _call(self, method, path, payload=None):
+        data = json.dumps(payload).encode("utf-8") if payload is not None else None
+        headers = {"Content-Type": "application/json"} if data is not None else {}
+        request = urllib.request.Request(self.base + path, data=data, method=method, headers=headers)
         try:
-            with urllib.request.urlopen(self.base + path, timeout=self.timeout) as resp:
+            with urllib.request.urlopen(request, timeout=self.timeout) as resp:
                 return resp.read(MAX_BYTES)
         except urllib.error.HTTPError as e:
-            body = e.read(10_000).decode("utf-8", "replace")
-            if e.code == 400 and "is not registered" in body:
+            text = e.read(10_000).decode("utf-8", "replace")
+            if e.code == 400 and "is not registered" in text:
                 raise NotRegistered("not registered") from None
             raise SignalApiError(f"the Signal API answered HTTP {e.code}") from None
         except (urllib.error.URLError, OSError) as e:
@@ -40,7 +48,7 @@ class SignalApi:
 
     def _json(self, path):
         try:
-            return json.loads(self._get(path))
+            return json.loads(self._call("GET", path))
         except ValueError:
             raise SignalApiError("unreadable answer from the Signal API") from None
 
@@ -51,7 +59,7 @@ class SignalApi:
         return data
 
     def devices(self, number):
-        data = self._json("/v1/devices/" + urllib.parse.quote(number, safe="+"))
+        data = self._json("/v1/devices/" + _number_path(number))
         ok = isinstance(data, list) and all(
             isinstance(d, dict) and isinstance(d.get("id"), int) and isinstance(d.get("name"), str)
             and isinstance(d.get("creation_timestamp"), int) for d in data)
@@ -60,7 +68,18 @@ class SignalApi:
         return data
 
     def qr_png(self, device_name):
-        body = self._get("/v1/qrcodelink?" + urllib.parse.urlencode({"device_name": device_name}))
+        body = self._call("GET", "/v1/qrcodelink?" + urllib.parse.urlencode({"device_name": device_name}))
         if not body.startswith(PNG_SIGNATURE):
             raise SignalApiError("the Signal API did not return a QR code image")
         return body
+
+    def unregister(self, number):
+        """Stop this app using the account. delete_account is always false: there is no way to ask
+        this client to delete the Signal account itself."""
+        self._call("POST", "/v1/unregister/" + _number_path(number),
+                   {"delete_account": False, "delete_local_data": False})
+
+    def delete_local_data(self, number):
+        """Delete this app's local Signal data. ignore_registered is always false, so the API
+        refuses while the number is still registered."""
+        self._call("DELETE", "/v1/devices/" + _number_path(number) + "/local-data", {"ignore_registered": False})

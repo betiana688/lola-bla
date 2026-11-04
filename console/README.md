@@ -38,3 +38,7 @@ Signed in, open "Signal account" on the home page. It shows whether the robot is
 | `LOLA_SIGNAL_API` | Where the Signal API listens (default `http://localhost:8080`) |
 | `LOLA_DEVICE_NAME` | The device name used when linking (default `reachy-mini`; tests use `console-test`) |
 | `LOLA_DB` | Use another database (tests and trials use a copy, never the real one) |
+
+## Step 8b: unlinking
+
+On the Signal page the button is **Unlink**, **Clean up** or **Finish unlinking**, depending on the state. It asks for the word UNLINK and your password. It marks the robot unlinked first, unregisters the number (it can never delete the Signal account itself), deletes the app's local Signal data, and reminds you to remove `reachy-mini` from Linked devices on your phone. If a step fails, the robot stays unlinked and the page offers to finish the rest.

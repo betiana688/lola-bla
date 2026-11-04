@@ -4,7 +4,7 @@
 
 - Own process, served over HTTPS (self-signed certificate) on port 9443, reachable on the home network, one user per account.
 - **Login**: credentials, one user. Keycloak maybe later.
-- **Pages**: sign in, change password, Signal account (link now, unlink in step 8b), then groups, contacts and logs.
+- **Pages**: sign in, change password, Signal account (link and unlink), then groups, contacts and logs.
 - **Audit**: every action is written to `audit_log`.
 - Reads and changes `lola.db`, the same database the conversation app uses. See [data-model.md](data-model.md).
 - Talks to the Signal API, which listens on the Pi only.
@@ -30,15 +30,15 @@ sequenceDiagram
   C->>D: save the account + audit: account_linked
   C-->>B: linked
   Note over B,D: 2. Unlinking - from the console
-  B->>C: "Unlink", a confirmation word and the password
+  B->>C: "Unlink", the word UNLINK and the password
+  C->>D: mark the robot unlinked first (Reachy stops at once) + audit: unlink_started
   C->>A: unregister the number (delete_account is always false)
-  C->>A: delete the local Signal data of this app (never overriding still registered)
-  C->>D: mark unlinked + audit: account_unlinked
-  C-->>B: unlinked here - now remove the device in Signal on your phone
-  B->>P: Settings, Linked devices, remove reachy-mini
-  C->>A: is our device still on the list?
-  C-->>B: done once the device is gone - Reachy now says it cannot reach messages
-  Note over P,A: Only the phone can revoke a linked device; the Signal API refuses to remove it
+  C->>A: delete the local Signal data of this app (never overriding "still registered")
+  C->>D: audit: account_unlinked
+  C-->>B: unlinked here. Now remove reachy-mini in Signal on your phone
+  Note over C,P: Only the phone can revoke a linked device, and once the number is unregistered the console cannot check that you did
+  Note over C,D: If a step fails the robot stays marked unlinked and the page offers "Finish unlinking"
+  Note over B,D: 3. Clean up after a removal on the phone: the status page shows "Removed from Signal" and offers "Clean up", which runs the same steps
   Note over P,A: Unlinking from the phone works too - the console then shows "not linked"
 ```
 
@@ -95,7 +95,7 @@ This section describes the console as built, step by step. The sections above ar
 | `/login`, `/logout` | Sign in and out. Events are audited as `console:<username>` or `console:anonymous`; the typed username is never stored |
 | `/` | Home: counts and links |
 | `/password` | Change password: current password, then the new one twice |
-| `/signal` | Signal account: status and linking (unlinking comes in step 8b) |
+| `/signal` | Signal account: status, linking and unlinking |
 | `manage.py create-user`, `reset-password`, `status`, `make-cert` | Run on the Pi |
 | `run.py` | Starts the console over HTTPS on port 9443 (`LOLA_CONSOLE_PORT`) |
 
@@ -119,6 +119,7 @@ The status comes from the Signal API's own answers (`/v1/accounts` and `/v1/devi
 | Removed from Signal | The number is registered but our device is no longer on its list (removed in Signal on the phone) |
 | A different account | The API has an account that is not the one in the database |
 | Cannot tell | The API did not answer, or answered something unexpected |
+| Unlinking not finished | The robot is marked unlinked here, but the Signal API still has the account (an earlier unlink stopped partway) |
 
 ```mermaid
 sequenceDiagram
@@ -143,6 +144,18 @@ A different account than the one in the database is refused: nothing is recorded
 
 The robot's device ID is per Signal account (2 for the live robot, 3 for the throwaway test device on the same account), so the console records the ID together with the creation time and never relies on the device name.
 
-### Open point for step 8b: the order of unlinking
+### Unlinking (step 8b)
 
-The unlink diagram above does `unregister` first and asks for the removal on the phone afterwards. After `unregister` the console can no longer see the device list, so it cannot notice the removal on the phone. Earlier experiments showed that a removal on the phone is visible only while the Signal API is still registered. Step 8b tests the other order first (remove on the phone, the console notices, then it cleans up) before anything is built.
+One form on the Signal page, with three labels for the same action: **Unlink** (linked), **Clean up** (the device was removed on the phone, or the database still says linked) and **Finish unlinking** (an earlier attempt stopped partway). It needs the word `UNLINK` and the password, and a wrong password counts toward the sign-in lockout.
+
+The order is chosen so that a failure never leaves Reachy using a dead account:
+
+1. Mark the robot unlinked in the database (Reachy stops at once). Audit entry `unlink_started`.
+2. `unregister` the number, always with `delete_account` false. "Not registered" counts as done.
+3. Delete the app's local Signal data, never overriding "still registered".
+4. Check that the account is gone. Audit entry `account_unlinked`, activity entry `unlink_done`.
+5. Tell the user to remove `reachy-mini` in Signal on the phone.
+
+If a step fails, the console stops, says which one (activity entry `unlink_failed`) and leaves the robot marked unlinked. The status page then offers "Finish unlinking" until an attempt succeeds.
+
+It acts only on the number recorded in the database, and refuses if the Signal API lists a different one. It refuses while a link is in progress. Once the number is unregistered the console cannot see the device list, so it cannot check that the device was removed on the phone, and says so.

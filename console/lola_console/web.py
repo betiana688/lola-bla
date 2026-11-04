@@ -367,7 +367,17 @@ async def password_post(request):
 
 
 LABELS = {"linked": "Linked", "not_linked": "Not linked", "removed": "Removed from Signal",
-          "different": "A different account", "unknown": "Cannot tell"}
+          "different": "A different account", "unknown": "Cannot tell",
+          "unfinished": "Unlinking not finished"}
+
+UNLINK_INFO = {
+    "unlink": ("Unlink", "Unlinking stops the robot using your Signal account: Reachy will say it cannot reach "
+                         "messages, and the app's local Signal data is deleted. Your Signal account itself is not "
+                         "touched. Afterwards, remove 'reachy-mini' from Linked devices in Signal on your phone."),
+    "cleanup": ("Clean up", "The robot's device is no longer linked on Signal's side. Cleaning up marks the robot "
+                            "as unlinked and deletes the app's local Signal data."),
+    "finish": ("Finish unlinking", "An earlier unlinking did not finish. This runs the remaining steps."),
+}
 
 
 def _csrf_ok(user, form) -> bool:
@@ -411,7 +421,8 @@ async def signal_get(request):
     minutes_left = max(1, math.ceil((link.LINK_WINDOW_S - (time.time() - state["started"])) / 60)) if state else 0
     return templates.TemplateResponse(request, "signal.html", {
         "status": status, "label": LABELS[status["state"]], "linking": bool(state),
-        "csrf": user["csrf"], "flash": flash, "minutes_left": minutes_left})
+        "csrf": user["csrf"], "flash": flash, "minutes_left": minutes_left,
+        "unlink_info": UNLINK_INFO.get(status.get("unlink"))})
 
 
 async def link_start(request):
@@ -497,6 +508,85 @@ async def link_cancel(request):
     return RedirectResponse("/signal", status_code=303)
 
 
+UNLINK_WORD = "UNLINK"
+
+
+async def _reauthenticate(con, user, password, who):
+    """Ask for the password again before something important. A wrong password counts toward the
+    same lockout as sign-in. Returns None if the password is right, otherwise a message to show."""
+    row = con.execute("SELECT password_hash, failed_attempts, locked_until FROM users WHERE id = ?",
+                      (user["id"],)).fetchone()
+    if not row:
+        return "You are not signed in."
+    now = con.execute("SELECT strftime('%Y-%m-%d %H:%M:%f','now')").fetchone()[0]
+    if row[2] and row[2] > now:
+        with con:
+            _audit(con, who, user["id"], "blocked")
+            _activity(con, "unlink_blocked", "An unlink was refused because sign-in is locked")
+        return "Too many wrong passwords. This is locked for a while."
+    ok = len(password) <= MAX_FIELD and await run_in_threadpool(auth.verify_password, password, row[0])
+    if ok:
+        with con:
+            con.execute("UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = ?", (user["id"],))
+        return None
+    failed = row[1] + 1
+    locked = failed >= MAX_FAILED
+    with con:
+        if locked:
+            con.execute("UPDATE users SET failed_attempts = ?, "
+                        "locked_until = strftime('%Y-%m-%d %H:%M:%f','now', ?) WHERE id = ?",
+                        (failed, f"+{LOCK_MINUTES} minutes", user["id"]))
+        else:
+            con.execute("UPDATE users SET failed_attempts = ? WHERE id = ?", (failed, user["id"]))
+        _audit(con, who, user["id"], "unlink_password_failed")
+        if locked:
+            _audit(con, who, user["id"], "locked")
+            _activity(con, "login_locked", f"Sign-in locked for {LOCK_MINUTES} minutes after {MAX_FAILED} wrong passwords")
+        else:
+            _activity(con, "unlink_password_failed", f"Wrong password when trying to unlink ({failed} in a row)")
+    return f"Too many wrong passwords. Locked for {LOCK_MINUTES} minutes." if locked else "The password is wrong."
+
+
+def _unlink_sync(db_path, api, who):
+    con = users.connect(db_path)
+    try:
+        return link.unlink(con, api, who)
+    finally:
+        con.close()
+
+
+async def unlink_post(request):
+    if not _origin_ok(request):
+        return _forbidden()
+    user = _current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    form = await request.form()
+    if not _csrf_ok(user, form):
+        return _forbidden()
+    app = request.app
+    who = f"console:{user['username']}"
+
+    def back(message):
+        app.state.flash = message
+        return RedirectResponse("/signal", status_code=303)
+
+    if str(form.get("confirm", "")).strip() != UNLINK_WORD:
+        return back(f"Nothing was done. Type {UNLINK_WORD} in capital letters to confirm.")
+    if _link_active(app):
+        return back("A link is in progress. Cancel it first.")
+    con = _connect(request)
+    try:
+        problem = await _reauthenticate(con, user, str(form.get("password", "")), who)
+    finally:
+        con.close()
+    if problem:
+        return back(problem)
+    async with app.state.link_lock:
+        outcome, text = await run_in_threadpool(_unlink_sync, app.state.db_path, app.state.signal, who)
+    return back(text)
+
+
 def create_app(db_path=None, secret=None, allowed_hosts=None, signal_client=None, device_name=None):
     middleware = [Middleware(SecurityHeaders)]
     if allowed_hosts:
@@ -513,6 +603,7 @@ def create_app(db_path=None, secret=None, allowed_hosts=None, signal_client=None
         Route("/link/qr.png", link_qr, methods=["GET"]),
         Route("/link/check", link_check, methods=["POST"]),
         Route("/link/cancel", link_cancel, methods=["POST"]),
+        Route("/unlink", unlink_post, methods=["POST"]),
         Mount("/static", StaticFiles(directory=str(BASE / "static")), name="static"),
     ]
     app = Starlette(routes=routes, middleware=middleware)

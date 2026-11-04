@@ -27,6 +27,9 @@ class FakeSignal:
         self.down = False
         self.accounts_fail = False
         self.qr_requests = 0
+        self.calls = []
+        self.fail_at = None
+        self.not_registered_at = set()
 
     def accounts(self):
         if self.down or self.accounts_fail:
@@ -47,6 +50,21 @@ class FakeSignal:
         if self.png is None:
             raise SignalApiError("the Signal API did not return a QR code image")
         return self.png
+
+    def unregister(self, number):
+        self.calls.append("unregister")
+        if number not in self.registered or "unregister" in self.not_registered_at:
+            raise NotRegistered("not registered")
+        if self.fail_at == "unregister":
+            raise SignalApiError("the Signal API answered HTTP 500")
+        self.registered = [n for n in self.registered if n != number]
+
+    def delete_local_data(self, number):
+        self.calls.append("delete")
+        if "delete" in self.not_registered_at:
+            raise NotRegistered("not registered")
+        if self.fail_at == "delete":
+            raise SignalApiError("the Signal API answered HTTP 500")
 
 
 class LinkBase(WebBase):

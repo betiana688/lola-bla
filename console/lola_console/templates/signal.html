@@ -12,7 +12,7 @@
 <p>{{ status.message }}</p>
 {% if linking %}
 <div id="link-box" data-csrf="{{ csrf }}">
-  <p>On your phone open Signal, then Settings, then Linked devices, then Link new device, and scan this code. It stays here for up to {{ minutes_left }} more minutes. Only scan it with your own phone.</p>
+  <p>On your phone open Signal, then Settings, then Linked devices, then Link new device, and scan this code. It stays here for up to {{ minutes_left }} more minutes. Only scan it with your own phone. A code works only once: if anything goes wrong, press Cancel and start again.</p>
   <img class="qr" src="/link/qr.png" alt="Signal link code" width="256" height="256">
   <p class="muted">Waiting for the scan. This page updates by itself.</p>
   <form method="post" action="/link/cancel">
@@ -27,6 +27,20 @@
   <button type="submit">Start linking</button>
 </form>
 {% endif %}
-<p class="muted">Unlinking comes in the next step.</p>
+{% if unlink_info and not linking %}
+<h2>{{ unlink_info[0] }}</h2>
+<p>{{ unlink_info[1] }}</p>
+<form method="post" action="/unlink">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label for="confirm">Type UNLINK to confirm</label>
+  <input id="confirm" name="confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+  <label for="unlink-password">Your password</label>
+  <div class="row">
+    <input id="unlink-password" name="password" type="password" autocomplete="current-password" required>
+    <button type="button" class="secondary" data-toggle-password="unlink-password" aria-pressed="false">Show</button>
+  </div>
+  <button type="submit">{{ unlink_info[0] }}</button>
+</form>
+{% endif %}
 <p><a href="/">Back</a></p>
 {% endblock %}

@@ -4,7 +4,7 @@
 |---|---|
 | 1 — Reading messages | ✅ Complete |
 | 2 — Replying to messages | ✅ Complete |
-| 3 — Configuring the app | 🔨 In progress: sign-in, password and Signal linking are built; unlink, groups, contacts and logs are next |
+| 3 — Configuring the app | 🔨 In progress: sign-in, password, Signal linking and unlinking are built; groups, contacts and logs are next |
 | 4 — Performance, security, privacy | ✅ Built and tested. One check is still open: the cloud providers' data-retention and training policies (Story 4c, items 1 and 3) have not been checked yet |
 
 ## Story 1: Reading messages
@@ -45,7 +45,7 @@ As Betiana, I want to configure the app, because I want to make sure who can int
 ### Linking the Signal account
 
 6. The user can link the robot's Signal device (named `reachy-mini`) to their account from the console by scanning a QR code with their phone, and can see whether it is linked. Linking is offered only when the Signal API has no account registered. If the scan is a different Signal account than the one the groups belong to, nothing is recorded and the page says so.
-7. The user can unlink from the console. Unlinking is a guided action: it needs a confirmation word and the password, stops the app using the account and deletes the app's local Signal data (never the Signal account itself), then tells the user to remove the device in Signal on their phone, because only the phone can revoke it, and notices when that has been done. Once unlinked, from the console or from the phone, the app can neither read nor send, and Reachy says so plainly.
+7. The user can unlink from the console. It needs a confirmation word and the password. The robot is marked unlinked first, so Reachy stops using the account and says so at once; then the console unregisters the number (never deleting the Signal account) and deletes the app's local Signal data. It then tells the user to remove the device in Signal on their phone, because only the phone can revoke it, and says plainly that it cannot check this once the number is unregistered. If the device is removed on the phone first, the status page notices, and "Clean up" finishes the job. If a step fails, the robot stays marked unlinked and "Finish unlinking" offers the rest.
 8. Nothing outside the Pi can reach the Signal API, and the console acts only through the linked device.
 
 ### Managing approvals

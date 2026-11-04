@@ -81,6 +81,7 @@ Rather than patch around the local performance ceiling, the app was rebuilt on a
 6. Put everything in one repo: our files inside Pollen's clone are links into it, Pollen's app is pinned to the commit we run plus a two-line patch, data and secrets stay outside the repo, `app/install.sh` rebuilds a fresh install and `save.sh` scans for secrets before every push.
 7. Fixed group matching so "Test" never plays "Another test".
 8. Console: the first user from the Pi (step 5); HTTPS sign-in with lockout, signed sessions and CSRF protection (step 6); change password (step 7); the Signal page with linking by QR code (step 8a). Real-browser testing caught a bug the offline tests missed (the Origin check combined with `Referrer-Policy: no-referrer`), and linking was tested against a throwaway Signal API and a copy of the database, never the live ones.
+9. Console step 8b: unlinking is a guided action (the robot is marked unlinked first, then unregister, then delete the app's local Signal data), because only the phone can revoke a linked device. An accident during testing (the device removed before the console saw the link) led to a clearer message on the link page: a code works only once.
 
 ## 4. Architecture
 
@@ -163,12 +164,12 @@ Key decisions: Signal's own group identifier is stored in its raw form and conve
 |---|---|
 | 1 — Reading messages | ✅ Complete |
 | 2 — Sending messages | ✅ Complete |
-| 3 — Configuration console | 🔨 In progress: sign-in, change password and Signal linking are built; unlink, groups, contacts and logs are next |
+| 3 — Configuration console | 🔨 In progress: sign-in, change password, Signal linking and unlinking are built; groups, contacts and logs are next |
 | 4 — Performance, security, privacy | ✅ Built and tested. One check is still open: the cloud providers' data-retention and training policies (Story 4c, items 1 and 3) have not been checked yet |
 
 ## 7. Backlog
 
-- Configuration console (Story 3): unlink (step 8b), the groups, contacts and logs pages, then run it as a service
+- Configuration console (Story 3): the groups, contacts and logs pages, then run it as a service
 - Robot software version currently one release behind its own SDK
 - Recording is capped at a maximum duration rather than being fully open-ended
 - The Signal API image is pinned only on this Pi (a local tag); `app/install.sh` does not set it up yet

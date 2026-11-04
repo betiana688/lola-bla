@@ -1,5 +1,5 @@
-"""Signal account status and linking, kept apart from the web layer so it can be tested alone.
-Never prints or logs a phone number."""
+"""Signal account status, linking and unlinking, kept apart from the web layer so it can be
+tested alone. Never prints or logs a phone number."""
 
 import uuid
 
@@ -7,6 +7,10 @@ from . import signal_api, users
 
 DEVICE_NAME = "reachy-mini"
 LINK_WINDOW_S = 600
+UNLINK_DONE = (
+    "Unlinked. The robot has stopped using the Signal account and the app's local Signal data is deleted. "
+    "One step is left that only you can do: in Signal on your phone, open Settings, then Linked devices, "
+    "and remove 'reachy-mini' if it is still there. This console cannot check that once the number is unregistered.")
 
 
 def mask_number(number):
@@ -29,8 +33,7 @@ def activity(con, event_type, status, detail):
         "VALUES (?, NULL, datetime('now'), ?, ?, ?)", (str(uuid.uuid4()), event_type, status, detail))
 
 
-def read_status(con, api, device_name=DEVICE_NAME):
-    """What Signal says about the robot's link. Reads only: it never changes anything."""
+def _read_state(con, api, device_name):
     row = con.execute("SELECT signal_number, device_id, device_created_at, linked_at FROM accounts LIMIT 1").fetchone()
     number = row[0] if row else None
     result = {"state": "unknown", "number_masked": mask_number(number),
@@ -39,7 +42,7 @@ def read_status(con, api, device_name=DEVICE_NAME):
     try:
         registered = api.accounts()
     except signal_api.SignalApiError:
-        if number:  # after a removal on the phone the account list errors, but our own number says so
+        if number:  # after a removal on the phone the account list can error, but our own number says so
             try:
                 api.devices(number)
             except signal_api.NotRegistered:
@@ -70,6 +73,34 @@ def read_status(con, api, device_name=DEVICE_NAME):
     else:
         result.update(state="removed", message="The Signal account is registered, but the robot's device is no "
                                                "longer on its device list. It was probably removed in Signal on your phone.")
+    return result
+
+
+def _unlink_pending(con):
+    """True if the last unlink attempt stopped partway."""
+    row = con.execute("SELECT event_type FROM log_entries WHERE event_type IN ('unlink_failed', 'unlink_done') "
+                      "ORDER BY occurred_at DESC, rowid DESC LIMIT 1").fetchone()
+    return bool(row) and row[0] == "unlink_failed"
+
+
+def read_status(con, api, device_name=DEVICE_NAME):
+    """What Signal says about the robot's link, plus which unlink button (if any) makes sense.
+    Reads only: it never changes anything."""
+    result = _read_state(con, api, device_name)
+    row = con.execute("SELECT status FROM accounts LIMIT 1").fetchone()
+    db_status = row[0] if row else None
+    result["unlink"] = None
+    if row and result["state"] in ("linked", "not_linked", "removed"):
+        if _unlink_pending(con):
+            result["unlink"] = "finish"
+        elif db_status == "linked":
+            result["unlink"] = "unlink" if result["state"] == "linked" else "cleanup"
+        elif result["state"] in ("linked", "removed"):
+            result["unlink"] = "finish"
+    if row and result["state"] == "linked" and db_status != "linked":
+        result.update(state="unfinished", can_link=False,
+                      message="The robot is marked unlinked here, but the Signal API still has the account. "
+                              "Finish unlinking to clean it up.")
     return result
 
 
@@ -121,3 +152,49 @@ def finish_link(con, api, user_id, who, device_name=DEVICE_NAME):
         audit(con, who, "accounts", account_id, "account_linked")
         activity(con, "account_linked", "ok", "The robot's Signal device was linked")
     return "linked", None
+
+
+def _unlink_failed(con, who, account_id, label, why):
+    with con:
+        audit(con, who, "accounts", account_id, "unlink_failed")
+        activity(con, "unlink_failed", "failed", f"Unlinking stopped at: {label} ({why})")
+    return "partial", (f"Unlinking did not finish: it stopped at '{label}'. Reachy is already marked unlinked. "
+                       "Press the button again to finish the rest.")
+
+
+def unlink(con, api, who):
+    """The guided unlink. Returns (outcome, text): 'done', 'partial' or 'refused'.
+    The robot is marked unlinked first, so Reachy stops using the account at once. The Signal
+    account itself is never deleted: the client has no way to ask for that."""
+    row = con.execute("SELECT id, signal_number FROM accounts LIMIT 1").fetchone()
+    if not row:
+        return "refused", "There is no Signal account recorded, so there is nothing to unlink."
+    account_id, number = row
+    try:
+        registered = api.accounts()
+    except signal_api.SignalApiError:
+        registered = None  # after a removal on the phone this list can fail; the steps below cope with it
+    if registered and registered != [number]:
+        return "refused", "The Signal API has a different account than the one recorded here, so nothing was changed."
+    with con:
+        con.execute("UPDATE accounts SET status = 'unlinked' WHERE id = ?", (account_id,))
+        audit(con, who, "accounts", account_id, "unlink_started")
+    steps = (("stop using the account (unregister)", api.unregister),
+             ("delete the app's local Signal data", api.delete_local_data))
+    for label, step in steps:
+        try:
+            step(number)
+        except signal_api.NotRegistered:
+            continue  # already not registered: nothing to do for this step
+        except signal_api.SignalApiError as e:
+            return _unlink_failed(con, who, account_id, label, str(e))
+    try:
+        still = api.accounts()
+    except signal_api.SignalApiError:
+        still = None
+    if still and number in still:
+        return _unlink_failed(con, who, account_id, "check that the account is gone", "the Signal API still lists it")
+    with con:
+        audit(con, who, "accounts", account_id, "account_unlinked")
+        activity(con, "unlink_done", "ok", "Unlinked from the console")
+    return "done", UNLINK_DONE
