@@ -10,6 +10,20 @@ At the same time, she's a small child, and I wasn't willing to hand her open acc
 
 This project was also my capstone during maternity leave — a hands-on way to actually understand, by building one myself, what a "multi-agent system" really means in practice, beyond the buzzword. (Worth being upfront: this specific app didn't *need* two agents — a single agent with more tools would have worked just as well, and been simpler. I built it with two deliberately, as a genuine multi-agent exercise, not because the task demanded it.)
 
+## Built with Claude
+
+I built this together with [Claude](https://claude.ai), Anthropic's AI assistant, and part of the point was to find out how far I could get working that way. Claude proposed the designs and wrote most of the code, tests and documentation. I made the decisions, ran everything on the robot, and tested it with a real phone, a real browser and real hardware.
+
+How we worked, and what I learned:
+
+- **Spec first, then build, then docs in the same step.** User stories and acceptance criteria came before any code. When I let the docs slip, they fell behind within days, so updating them with each step is now a rule.
+- **Small steps, each verified.** Every piece was tested on its own (offline tests with fakes, then the real thing) before the next one was built on top.
+- **The assistant makes mistakes, and the process catches them.** A security header made the console refuse every sign-in (found in a real browser, now pinned by a test). Asking for the group "Test" also played "Another test" (found in a live run). Messages were once marked as played when playback had failed. Nothing counted as done until it ran.
+- **Safety by structure, not by promise.** Data and secrets live outside the repo so they cannot be committed by accident, a scan runs before every push, and the cloud AI only ever sees names, counts and timestamps.
+- **It only knows what I show it.** Claude cannot see my screen or my robot. Everything it knew about what actually happened came from the output I pasted back, so those pastes were part of the engineering.
+
+If you want to try this yourself: ask for the spec before the code, make it show its work, test on the real thing, and keep the docs moving with the code.
+
 ## What it does
 
 - **Reads messages aloud** — Reachy checks a small set of approved family Signal groups, announces who a message is from and when it arrived, and plays it.
