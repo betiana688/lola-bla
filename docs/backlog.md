@@ -47,3 +47,19 @@
 - Amplify speaker and microphone sound (software post-processing via audio-utils)
 - SBOM, README, development plan
 - Git repository for the project
+
+## Added 2026-11-04
+
+### Story 1: Reading messages
+- Play in the background with "stop" and "next". Playback currently blocks the tool until the last message ends, and the live layer errors if the child speaks meanwhile.
+- The playback thread should honour a stop flag. Interrupting mid-playback started the next file before aborting.
+- Investigate: the spoken summary after a check was sometimes cut off by a barge-in event.
+- Test: a quiet child's voice against the 3% silence threshold of the recorder.
+
+### Before publishing
+- Remove `test_mic_handoff` from Lola's tool list.
+- Decide: Hugging Face credits for the messaging assistant, or a single agent (every installer would need their own credits and token).
+- Memory facts are not scoped per profile (Reachy greeted by name).
+- `app/README.md` still mentions `LOLA_SIGNAL_NUMBER`, which the code no longer uses. SBOM and development plan need sox, the pins, the fallback, the background sync and Story 3 progress.
+- Offline tests for the existing code are still heredocs, not files.
+- The pip step of `app/install.sh` is untested. Daemon version mismatch (1.10.0 vs SDK 1.11.0) is still deferred.
