@@ -1,8 +1,29 @@
+CREATE TABLE users (
+  id TEXT PRIMARY KEY,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  password_changed_at TEXT,
+  failed_attempts INTEGER NOT NULL DEFAULT 0,
+  locked_until TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE accounts (
+  id TEXT PRIMARY KEY,
+  user_id TEXT UNIQUE REFERENCES users(id),
+  signal_number TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'linked' CHECK (status IN ('linked','unlinked')),
+  device_id INTEGER,
+  device_created_at TEXT,
+  linked_at TEXT
+);
+
 CREATE TABLE groups (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   signal_group_id TEXT NOT NULL UNIQUE,
-  is_active INTEGER NOT NULL DEFAULT 1
+  is_active INTEGER NOT NULL DEFAULT 1,
+  account_id TEXT REFERENCES accounts(id)
 );
 
 CREATE TABLE contacts (

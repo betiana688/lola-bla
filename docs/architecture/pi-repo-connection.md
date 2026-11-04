@@ -1,0 +1,27 @@
+# How the Pi, the repo and GitHub connect
+
+```mermaid
+flowchart LR
+  subgraph GH["GitHub"]
+    direction TB
+    G1["betiana688/lola-bla<br/>private - our code"]
+    G2["pollen-robotics/<br/>reachy_mini_conversation_app<br/>public - the engine"]
+  end
+  subgraph PI["The Pi"]
+    direction TB
+    R["~/lola-bla<br/>OUR REPO - code only"]
+    subgraph C["Pollen's clone - the app runs from here"]
+      direction TB
+      L["our files here are LINKS<br/>pointing into the repo"]
+      D["DATA - stays here, never pushed<br/>lola.db, audio/, hf_token"]
+    end
+  end
+  R <-->|"push and pull over SSH<br/>deploy key, this one repo only"| G1
+  G2 -->|"install.sh clones the pinned commit<br/>and applies our small patch"| C
+  L -.->|"point to"| R
+```
+
+- The app runs from Pollen's clone. Our files there are links to the files in this repo, so there is one copy of each.
+- Editing a file edits the repo's file. Then commit and push from the repo folder.
+- The database, audio and tokens stay in the clone's local_data folder, outside the repo, so they cannot be committed by accident.
+- Pollen's engine comes from its public repo at one pinned commit (app/patches/POLLEN_COMMIT) plus our patch. We never push there.

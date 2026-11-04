@@ -1,13 +1,37 @@
-"""The Messaging Agent - a specialist LLM that interprets task_description
-and decides which local action to actually take. Called by handle_messaging_task,
-never talks to the child directly."""
+"""The Messaging Agent - a specialist that interprets task_description and decides
+which local action to take. Called by handle_messaging_task, never talks to the child.
+
+Normally a separate cloud LLM makes the decision. If that call fails (no credits,
+expired token, no network), a small set of local keyword rules takes over so messaging
+keeps working. The fallback is deliberately simple and conservative: when unsure it
+only checks, and it never plays or sends unless the words are clear."""
 
 import json
+import re
+import subprocess
+import time
+from pathlib import Path
+
 from huggingface_hub import InferenceClient
 
 import messaging_executor
 
 MODEL = "meta-llama/Llama-3.3-70B-Instruct"
+TOKEN_PATH = Path(__file__).parent / "hf_token"
+
+# After a failed cloud call, skip the cloud for this long and use the local rules.
+COOLDOWN_S = 300
+_cloud_disabled_until = 0.0
+
+
+def _load_token() -> str:
+    """The Messaging Agent uses its own dedicated Hugging Face token, kept in an
+    owner-only file, never the robot's shared login."""
+    token = TOKEN_PATH.read_text().strip() if TOKEN_PATH.exists() else ""
+    if not token:
+        raise RuntimeError("Missing hf_token file for the Messaging Agent")
+    return token
+
 
 TOOLS = [
     {
@@ -104,6 +128,8 @@ def _summarize_for_agent(executor_result):
                 "most_recent": f"{most_recent['day']}, {most_recent['time']}" if most_recent else None,
             })
         return {"status": "found_messages", "groups": summary_groups}
+    if status == "not_linked":
+        return {"status": "not_linked"}
     if status == "sent":
         return {"status": "sent"}
     if status == "failed":
@@ -112,7 +138,8 @@ def _summarize_for_agent(executor_result):
 
 
 def _play_filtered(check_result, group_name=None, sender_name=None):
-    """Plays messages from check_messages()'s full result, optionally filtered."""
+    """Plays messages from check_messages()'s full result, optionally filtered.
+    A message is marked played only if playback really succeeded."""
     played_any = False
     for group in check_result.get("groups", []):
         if group_name and group_name.lower() not in group["group_name"].lower():
@@ -120,21 +147,64 @@ def _play_filtered(check_result, group_name=None, sender_name=None):
         for message in group.get("messages", []):
             if sender_name and sender_name.lower() not in message["sender"].lower():
                 continue
-            import subprocess
             play_result = subprocess.run(["aplay", "-D", "reachymini_audio_sink", message["audio_path"]])
             if play_result.returncode == 0:
                 messaging_executor.mark_played(message["message_id"], accessed_by="messaging_agent")
                 played_any = True
-            else:
-                # Playback failed - do NOT mark as played, so it's not silently lost.
-                pass
     return played_any
 
 
-def handle_task(task_description: str) -> dict:
-    """Main entry point. Interprets the task, executes the right local action,
-    returns a minimal summary - never raw IDs, paths, or full message content."""
-    client = InferenceClient()
+# ---------- Local fallback rules (English, Spanish, German) ----------
+
+_CHECK = re.compile(r"\bcheck\w*|\bany\b|\bdo i have\b|\brevis\w*|\bchequ\w*|\bhay\b|\btengo\b|\bpr[üu]f\w*|\bgibt\b|\bhabe\b", re.I)
+_PLAY = re.compile(r"\bplay\w*|\bhear\w*|\blisten\w*|\breproduc\w*|\bescuch\w*|\babspiel\w*|\banh[öo]r\w*|\bhör\w*", re.I)
+_SEND = re.compile(r"\bsend(?:s|ing)?\b|\benvi\w*|\bm[aá]nd\w*|\bsenden\b|\bsende\b|\bschick\w*", re.I)
+_RECORD = re.compile(r"\brecord\w*|\bgrab\w*|\baufnehm\w*|\baufnahme\w*", re.I)
+_AGAIN = re.compile(r"\bagain\b|\bre-?record\w*|\bdelete\b|\bdiscard\b|otra vez|de nuevo|\bborr\w*|\bnochmal\b|noch einmal|\bl[öo]sch\w*", re.I)
+_REPLAY = re.compile(r"\breplay\w*|\bback\b|\b(?:play|hear|listen)\w*\s+(?:to\s+)?(?:it|that|this)\b|\bescuch\w*|\breproduc\w*|\babspiel\w*|\banh[öo]r\w*", re.I)
+
+
+def _norm(text: str) -> str:
+    text = text.lower().replace("&", " ")
+    text = re.sub(r"\b(and|und|y|e)\b", " ", text)
+    return re.sub(r"[^\w]+", " ", text).strip()
+
+
+def _group_from_text(text: str):
+    """The approved group named in the text, or None if none or more than one."""
+    groups = messaging_executor.get_active_groups_list(accessed_by="messaging_agent")
+    haystack = " " + _norm(text) + " "
+    hits = [g["group_name"] for g in groups if " " + _norm(g["group_name"]) + " " in haystack]
+    hits = [h for h in hits if not any(h != o and _norm(h) in _norm(o) for o in hits)]
+    return hits[0] if len(hits) == 1 else None
+
+
+def _decide_with_rules(text: str, pending_recording: bool):
+    if pending_recording:
+        # Replay first: sending cannot be undone, so if both are mentioned, replay.
+        if _REPLAY.search(text):
+            return "replay_recording", {}
+        if _AGAIN.search(text):
+            return "rerecord", {}
+        if _SEND.search(text):
+            return "send_recording", {}
+    # "play back the message I tried to record" points at a recording, it is not a request to record
+    if (re.search(r"\brecorded\b|\btried to record\b|\bgrabad\w*|\baufgenommen\w*", text, re.I)
+            and _REPLAY.search(text) and not _SEND.search(text)):
+        return "replay_recording", {}
+    if _SEND.search(text) or _RECORD.search(text):
+        return "need_recording", {"group_name": _group_from_text(text)}
+    if _CHECK.search(text):
+        return "check_only", {}
+    if _PLAY.search(text):
+        return "play_messages", {"group_name": _group_from_text(text)}
+    return "check_only", {}  # unsure: the safe choice
+
+
+# ---------- Cloud decision ----------
+
+def _decide_with_cloud(task_description: str):
+    client = InferenceClient(token=_load_token(), timeout=20)
     response = client.chat_completion(
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -144,18 +214,42 @@ def handle_task(task_description: str) -> dict:
         tools=TOOLS,
         max_tokens=200,
     )
-
     message = response.choices[0].message
     if not message.tool_calls:
-        return {"status": "unclear", "detail": "Could not determine what was wanted."}
-
+        return "unclear", {}
     call = message.tool_calls[0]
-    fn_name = call.function.name
     args = json.loads(call.function.arguments) if call.function.arguments else {}
+    return call.function.name, args
+
+
+def _note_fallback(error: Exception) -> None:
+    code = getattr(getattr(error, "response", None), "status_code", None)
+    detail = (f"Cloud assistant unavailable ({type(error).__name__}"
+              f"{f', HTTP {code}' if code else ''}); using simple local rules for {COOLDOWN_S // 60} minutes")
+    try:
+        messaging_executor.log_event("agent_fallback", "degraded", detail)
+    except Exception:
+        pass
+
+
+def handle_task(task_description: str, pending_recording: bool = False) -> dict:
+    """Main entry point. Interprets the task, executes the right local action,
+    returns a minimal summary - never raw IDs, paths, or full message content."""
+    global _cloud_disabled_until
+    decision = None
+    if time.monotonic() >= _cloud_disabled_until:
+        try:
+            decision = _decide_with_cloud(task_description)
+        except Exception as e:
+            _cloud_disabled_until = time.monotonic() + COOLDOWN_S
+            _note_fallback(e)
+    if decision is None:
+        decision = _decide_with_rules(task_description, pending_recording)
+
+    fn_name, args = decision
 
     if fn_name == "check_only":
-        result = messaging_executor.check_messages(accessed_by="messaging_agent")
-        return _summarize_for_agent(result)
+        return _summarize_for_agent(messaging_executor.check_messages(accessed_by="messaging_agent"))
 
     if fn_name == "play_messages":
         result = messaging_executor.check_messages(accessed_by="messaging_agent")
@@ -167,13 +261,7 @@ def handle_task(task_description: str) -> dict:
     if fn_name == "need_recording":
         return {"status": "need_recording", "group_name": args.get("group_name")}
 
-    if fn_name == "send_recording":
-        return {"status": "send_recording"}
+    if fn_name in ("send_recording", "replay_recording", "rerecord"):
+        return {"status": fn_name}
 
-    if fn_name == "replay_recording":
-        return {"status": "replay_recording"}
-
-    if fn_name == "rerecord":
-        return {"status": "rerecord"}
-
-    return {"status": "unclear"}
+    return {"status": "unclear", "detail": "Could not determine what was wanted."}

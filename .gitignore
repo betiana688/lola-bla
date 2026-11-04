@@ -22,3 +22,11 @@ venv/
 .DS_Store
 Thumbs.db
 .vscode/
+hf_token
+*.db
+*.db-*
+audio/
+config.json
+*.bak
+*.pem
+id_*

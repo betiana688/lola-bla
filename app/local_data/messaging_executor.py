@@ -1,11 +1,14 @@
 """Local Tool Executor - the actual check_messages/send_message logic.
 Runs entirely on the Pi; the Conversational Agent never sees this code
-or its data directly, only whatever the calling tool chooses to return."""
+or its data directly, only whatever the calling tool chooses to return.
+
+The linked Signal account lives in the database (accounts table), not in code."""
 
 import base64
-import os
 import subprocess
 import sqlite3
+import threading
+import time
 import uuid
 import requests
 from pathlib import Path
@@ -13,7 +16,19 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 API_BASE = "http://localhost:8080"
-ACCOUNT_NUMBER = os.environ.get("LOLA_SIGNAL_NUMBER", "YOUR_ACTUAL_NUMBER_HERE")  # linked Signal number, e.g. +49...
+
+# Deliberately generous. The Signal API handles one account operation at a time and a
+# receive can take minutes after a long silence. Giving up early could abandon messages
+# Signal has already handed over, so waiting is the cautious choice until receiving
+# moves to a background job.
+RECEIVE_TIMEOUT_S = 150
+SEND_TIMEOUT_S = 60
+DOWNLOAD_TIMEOUT_S = 60
+
+# A check reads the database directly if a sync finished less than this long ago.
+FRESH_S = 300
+_sync_lock = threading.Lock()  # syncs never overlap
+_last_sync_ok = -1e9           # time.monotonic() of the last good sync
 
 BASE_DIR = Path(__file__).parent
 DB_PATH = BASE_DIR / "lola.db"
@@ -23,8 +38,12 @@ AUDIO_DIR.mkdir(exist_ok=True)
 TIMEZONE = ZoneInfo("Europe/Berlin")
 
 
+class NotLinkedError(Exception):
+    """Signal says this device is no longer registered to the account."""
+
+
 def _get_conn():
-    return sqlite3.connect(DB_PATH)
+    return sqlite3.connect(DB_PATH, timeout=30)
 
 
 def _log_audit(conn, accessed_by, table_name, record_id, operation):
@@ -35,9 +54,60 @@ def _log_audit(conn, accessed_by, table_name, record_id, operation):
     )
 
 
+def _log_event(conn, event_type, status, detail=None, message_id=None):
+    """Activity log entry. Never put phone numbers in `detail`."""
+    conn.execute(
+        "INSERT INTO log_entries (id, message_id, occurred_at, event_type, status, detail) "
+        "VALUES (?, ?, datetime('now'), ?, ?, ?)",
+        (str(uuid.uuid4()), message_id, event_type, status, detail)
+    )
+
+
+def get_linked_number(conn):
+    row = conn.execute("SELECT signal_number FROM accounts WHERE status = 'linked' LIMIT 1").fetchone()
+    return row[0] if row else None
+
+
+def is_linked():
+    """True if the Signal account is currently marked as linked. Reads the database only."""
+    conn = _get_conn()
+    try:
+        return get_linked_number(conn) is not None
+    finally:
+        conn.close()
+
+
+def _mark_unlinked(conn, accessed_by):
+    conn.execute("UPDATE accounts SET status = 'unlinked' WHERE status = 'linked'")
+    _log_audit(conn, accessed_by, "accounts", None, "write")
+    _log_event(conn, "account_unlinked", "detected",
+               "Signal reports this device is no longer registered to the account")
+    conn.commit()
+
+
+def log_event(event_type, status, detail=None):
+    """Public activity-log entry for failures outside this module (for example in
+    the tool). Never put phone numbers in `detail`."""
+    conn = _get_conn()
+    try:
+        _log_event(conn, event_type, status, detail)
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _is_not_registered(resp):
+    return resp.status_code == 400 and "is not registered" in resp.text
+
+
 def _get_active_groups(conn):
     rows = conn.execute("SELECT id, signal_group_id FROM groups WHERE is_active = 1").fetchall()
     return {signal_id: our_id for (our_id, signal_id) in rows}
+
+
+def _group_name(conn, group_id):
+    row = conn.execute("SELECT name FROM groups WHERE id = ?", (group_id,)).fetchone()
+    return row[0] if row else "unknown"
 
 
 def _find_contact(conn, group_id, source_number, source_uuid):
@@ -57,7 +127,7 @@ def _is_own_echo(conn, timestamp):
 
 
 def _download_attachment(attachment_id, filename):
-    resp = requests.get(f"{API_BASE}/v1/attachments/{attachment_id}")
+    resp = requests.get(f"{API_BASE}/v1/attachments/{attachment_id}", timeout=DOWNLOAD_TIMEOUT_S)
     resp.raise_for_status()
 
     raw_ext = Path(filename).suffix or ".bin"
@@ -65,7 +135,8 @@ def _download_attachment(attachment_id, filename):
     raw_path.write_bytes(resp.content)
 
     wav_path = raw_path.with_suffix(".wav")
-    subprocess.run(["ffmpeg", "-y", "-i", str(raw_path), "-ar", "16000", "-ac", "2", str(wav_path)], check=True, capture_output=True)
+    subprocess.run(["ffmpeg", "-y", "-i", str(raw_path), "-ar", "16000", "-ac", "2", str(wav_path)],
+                   check=True, capture_output=True, timeout=60)
     raw_path.unlink()
     return str(wav_path)
 
@@ -81,9 +152,11 @@ def _extract_content_message(envelope, conn):
     return None
 
 
-def _sync_messages(conn, accessed_by):
+def _sync_messages(conn, accessed_by, number):
     active_groups = _get_active_groups(conn)
-    resp = requests.get(f"{API_BASE}/v1/receive/{ACCOUNT_NUMBER}")
+    resp = requests.get(f"{API_BASE}/v1/receive/{number}", timeout=RECEIVE_TIMEOUT_S)
+    if _is_not_registered(resp):
+        raise NotLinkedError()
     resp.raise_for_status()
     envelopes = resp.json()
 
@@ -97,21 +170,28 @@ def _sync_messages(conn, accessed_by):
         if not group_info:
             continue
 
-        signal_group_id = group_info.get("groupId")
-        our_group_id = active_groups.get(signal_group_id)
+        our_group_id = active_groups.get(group_info.get("groupId"))
         if not our_group_id:
             continue
 
-        source_number = envelope.get("sourceNumber")
-        source_uuid = envelope.get("sourceUuid")
-        contact_id = _find_contact(conn, our_group_id, source_number, source_uuid)
+        contact_id = _find_contact(conn, our_group_id, envelope.get("sourceNumber"), envelope.get("sourceUuid"))
         if not contact_id:
+            _log_event(conn, "unknown_sender", "ignored",
+                       f"Ignored a message in approved group '{_group_name(conn, our_group_id)}' "
+                       "from someone who is not an approved contact")
+            conn.commit()
             continue
 
-        attachments = content_message.get("attachments", [])
-        audio_attachments = [a for a in attachments if a.get("contentType", "").startswith("audio/")]
+        audio_attachments = [a for a in content_message.get("attachments", [])
+                             if a.get("contentType", "").startswith("audio/")]
         for attachment in audio_attachments:
-            audio_path = _download_attachment(attachment["id"], attachment["filename"])
+            try:
+                audio_path = _download_attachment(attachment["id"], attachment["filename"])
+            except Exception as e:
+                _log_event(conn, "download_failed", "failed",
+                           f"Could not download an incoming voice message ({type(e).__name__})")
+                conn.commit()
+                continue
             msg_id = str(uuid.uuid4())
             conn.execute(
                 "INSERT INTO messages (id, group_id, contact_id, direction, audio_path, timestamp, played_by_reachy) "
@@ -119,8 +199,46 @@ def _sync_messages(conn, accessed_by):
                 (msg_id, our_group_id, contact_id, audio_path, str(envelope.get("timestamp")))
             )
             _log_audit(conn, accessed_by, "messages", msg_id, "write")
+            conn.commit()
 
-    conn.commit()
+
+def _sync_if_stale(conn, accessed_by, number, max_age_s=None):
+    """Pull new messages from Signal unless a sync finished less than max_age_s ago
+    (default FRESH_S). Syncs never overlap: a caller that arrives mid-sync waits for
+    it and then usually finds the data fresh."""
+    global _last_sync_ok
+    limit = FRESH_S if max_age_s is None else max_age_s
+    with _sync_lock:
+        if time.monotonic() - _last_sync_ok < limit:
+            return
+        _sync_messages(conn, accessed_by, number)
+        _last_sync_ok = time.monotonic()
+
+
+def sync_now(accessed_by="background_sync"):
+    """One background sync. Returns (status, error_name) where status is 'ok',
+    'not_linked' or 'failed'. Never raises."""
+    try:
+        conn = _get_conn()
+    except Exception as e:
+        return "failed", type(e).__name__
+    try:
+        number = get_linked_number(conn)
+        if not number:
+            return "not_linked", None
+        try:
+            _sync_if_stale(conn, accessed_by, number, max_age_s=60)
+            return "ok", None
+        except NotLinkedError:
+            _mark_unlinked(conn, accessed_by)
+            return "not_linked", None
+        except Exception as e:
+            conn.rollback()
+            return "failed", type(e).__name__
+    except Exception as e:
+        return "failed", type(e).__name__
+    finally:
+        conn.close()
 
 
 def _format_day_and_time(timestamp_ms):
@@ -137,10 +255,25 @@ def _format_day_and_time(timestamp_ms):
 
 def check_messages(accessed_by="messaging_agent"):
     """Checks all active groups for unplayed messages. Returns a plain-language
-    summary dict for the Messaging Agent to relay - never raw audio."""
+    summary dict for the Messaging Agent to relay - never raw audio.
+    Returns {"status": "not_linked"} if the Signal account is not linked."""
     conn = _get_conn()
     try:
-        _sync_messages(conn, accessed_by)
+        number = get_linked_number(conn)
+        if not number:
+            return {"status": "not_linked"}
+
+        try:
+            _sync_if_stale(conn, accessed_by, number)
+        except NotLinkedError:
+            _mark_unlinked(conn, accessed_by)
+            return {"status": "not_linked"}
+        except Exception as e:
+            conn.rollback()
+            _log_event(conn, "sync_failed", "failed",
+                       f"Could not check Signal for new messages ({type(e).__name__}); "
+                       "showing what was already received")
+            conn.commit()
 
         candidates = conn.execute(
             "SELECT DISTINCT g.id, g.name FROM groups g "
@@ -150,6 +283,7 @@ def check_messages(accessed_by="messaging_agent"):
         _log_audit(conn, accessed_by, "groups", None, "read")
 
         if not candidates:
+            conn.commit()
             return {"status": "no_new_messages"}
 
         results = []
@@ -212,9 +346,13 @@ def get_active_groups_list(accessed_by="messaging_agent"):
 def send_message(group_id, recording_path, accessed_by="messaging_agent"):
     """Sends a locally-recorded message to a group. The recording never
     leaves this function except to Signal's own API - the caller only
-    ever gets success/failure back."""
+    ever gets a status back: sent, failed, or not_linked."""
     conn = _get_conn()
     try:
+        number = get_linked_number(conn)
+        if not number:
+            return {"status": "not_linked"}
+
         row = conn.execute("SELECT signal_group_id FROM groups WHERE id = ?", (group_id,)).fetchone()
         if not row:
             return {"error": "group not found"}
@@ -227,19 +365,27 @@ def send_message(group_id, recording_path, accessed_by="messaging_agent"):
 
         payload = {
             "message": "",
-            "number": ACCOUNT_NUMBER,
+            "number": number,
             "recipients": [recipient],
             "base64_attachments": [audio_b64],
         }
 
         try:
-            resp = requests.post(f"{API_BASE}/v2/send", json=payload, timeout=30)
-            if not resp.ok:
-                return {"status": "failed", "detail": f"{resp.status_code}: {resp.text}"}
-            sent_timestamp = resp.json().get("timestamp")
+            resp = requests.post(f"{API_BASE}/v2/send", json=payload, timeout=SEND_TIMEOUT_S)
         except requests.exceptions.RequestException as e:
-            return {"status": "failed", "detail": str(e)}
+            _log_event(conn, "send_failed", "failed", f"Could not reach Signal to send ({type(e).__name__})")
+            conn.commit()
+            return {"status": "failed"}
 
+        if _is_not_registered(resp):
+            _mark_unlinked(conn, accessed_by)
+            return {"status": "not_linked"}
+        if not resp.ok:
+            _log_event(conn, "send_failed", "failed", f"Signal refused the message (HTTP {resp.status_code})")
+            conn.commit()
+            return {"status": "failed"}
+
+        sent_timestamp = resp.json().get("timestamp")
         msg_id = str(uuid.uuid4())
         conn.execute(
             "INSERT INTO messages (id, group_id, contact_id, direction, audio_path, timestamp, played_by_reachy) "
