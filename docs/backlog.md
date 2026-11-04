@@ -99,4 +99,4 @@
 ### Console step 10 (2026-11-04)
 - Decision: adding a contact needs no extra password (the author's choice). Revisit if the console is ever reachable by anyone else.
 - Limit: a contact who hides their number from group members may arrive as an ID only and be ignored as an unknown sender. A second contact row holding the ID would fix it, but it needs the ID, which only some contacts have.
-- Not yet tried: the Contacts pages in a browser against the real contact list, and that the robot picks up contact changes on its next check without a restart.
+- Tried in a browser on 2026-11-04 on a copy of the database with the real Signal contact list, by the author's report (add, rename, remove). Not individually confirmed: the refusals, and that the robot picks up contact changes on its next check without a restart.
