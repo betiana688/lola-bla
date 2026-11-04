@@ -63,3 +63,7 @@
 - `app/README.md` still mentions `LOLA_SIGNAL_NUMBER`, which the code no longer uses. SBOM and development plan need sox, the pins, the fallback, the background sync and Story 3 progress.
 - Offline tests for the existing code are still heredocs, not files.
 - The pip step of `app/install.sh` is untested. Daemon version mismatch (1.10.0 vs SDK 1.11.0) is still deferred.
+
+### Security review: known and accepted for now (2026-11-04)
+- The Pi's SSH password is still the documented default. Revisit before publishing.
+- The console minimum password is 5 characters, by choice. The sign-in lockout (5 wrong tries, 15 minutes) is the protection.

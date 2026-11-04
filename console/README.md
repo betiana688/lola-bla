@@ -13,3 +13,18 @@ Passwords are typed at a hidden prompt. Everything is written to the audit log a
 Tests (they use a temporary database, never the real one):
 
     cd console && python3 -m unittest discover -s tests -t . -v
+
+## Step 6: the web console (sign-in)
+
+Starlette app served over HTTPS with a self-signed certificate.
+
+| Command | What it does |
+|---|---|
+| `python3 console/manage.py make-cert` | Create the certificate and key in `~/.config/lola-bla/tls` (the key is owner-only and never in the repo) |
+| `python3 console/run.py` | Start the console on `https://reachy-mini.local:9443/` (port: `LOLA_CONSOLE_PORT`) |
+
+Sign-in rules: 5 wrong attempts lock sign-in for 15 minutes, and after a lock one wrong attempt re-locks. A password reset on the Pi clears the lock and ends all sessions. The certificate is valid for a year: run `make-cert` again before it expires. Extra host names: `LOLA_CONSOLE_HOSTS=name1,name2` before `make-cert` and before starting.
+
+## Step 7: change password
+
+Signed in, open "Change password" on the home page. It asks for the current password, then the new one twice. A wrong current password counts toward the same lockout as sign-in. Changing the password ends every other sign-in, and this browser gets a fresh session.

@@ -26,8 +26,17 @@ def _ask_new_password(read_password):
 
 def main(argv=None, read_password=getpass.getpass, read_line=input, out=print) -> int:
     parser = argparse.ArgumentParser(prog="manage.py", description="Lola-Bla console users")
-    parser.add_argument("command", choices=["create-user", "reset-password", "status"])
+    parser.add_argument("command", choices=["create-user", "reset-password", "status", "make-cert"])
     args = parser.parse_args(argv)
+    if args.command == "make-cert":
+        from lola_console import tls
+        info = tls.make_certificate()
+        out(f"Certificate: {info['cert_path']}")
+        out(f"Private key (owner-only): {info['key_path']}")
+        out(f"Valid for: {', '.join(info['names'])}")
+        out(f"Expires: {info['expires']} (run make-cert again before then)")
+        out(f"SHA-256 fingerprint: {info['fingerprint']}")
+        return 0
     try:
         con = users.connect()
         try:
