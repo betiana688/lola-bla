@@ -2,9 +2,9 @@
 
 ![Console overview](images/console-overview.png)
 
-- Own process and port, LAN only, one user per account.
+- Own process, served over HTTPS (self-signed certificate) on port 9443, reachable on the home network, one user per account.
 - **Login**: credentials, one user. Keycloak maybe later.
-- **Pages**: link Signal, manage groups, view logs.
+- **Pages**: sign in, change password, Signal account (link now, unlink in step 8b), then groups, contacts and logs.
 - **Audit**: every action is written to `audit_log`.
 - Reads and changes `lola.db`, the same database the conversation app uses. See [data-model.md](data-model.md).
 - Talks to the Signal API, which listens on the Pi only.
@@ -30,10 +30,15 @@ sequenceDiagram
   C->>D: save the account + audit: account_linked
   C-->>B: linked
   Note over B,D: 2. Unlinking - from the console
-  B->>C: "Unlink" and confirm
-  C->>A: remove this device (exact call to be verified)
+  B->>C: "Unlink", a confirmation word and the password
+  C->>A: unregister the number (delete_account is always false)
+  C->>A: delete the local Signal data of this app (never overriding still registered)
   C->>D: mark unlinked + audit: account_unlinked
-  C-->>B: unlinked - Reachy now says it cannot reach messages
+  C-->>B: unlinked here - now remove the device in Signal on your phone
+  B->>P: Settings, Linked devices, remove reachy-mini
+  C->>A: is our device still on the list?
+  C-->>B: done once the device is gone - Reachy now says it cannot reach messages
+  Note over P,A: Only the phone can revoke a linked device; the Signal API refuses to remove it
   Note over P,A: Unlinking from the phone works too - the console then shows "not linked"
 ```
 
@@ -52,7 +57,7 @@ sequenceDiagram
   B->>C: username + password
   C->>D: look up the user, check the stored hash
   alt wrong password
-    C->>D: audit: login_failed (repeated failures lock the login for a while)
+    C->>D: audit: login_failed (5 wrong passwords in a row lock sign-in for 15 minutes)
     C-->>B: rejected
   else correct
     C->>D: audit: login_ok
@@ -81,7 +86,7 @@ sequenceDiagram
 
 ## As built (updated 2026-11-04)
 
-This section is newer than the ones above. Where they differ (for example the unlink flow), this one wins; the older sections are reconciled in the next docs pass.
+This section describes the console as built, step by step. The sections above are the design.
 
 ### Pages and commands
 
@@ -135,3 +140,5 @@ sequenceDiagram
 ```
 
 A different account than the one in the database is refused: nothing is recorded, and the page says to remove the new device in Signal on the phone.
+
+The robot's device ID is per Signal account (2 for the live robot, 3 for the throwaway test device on the same account), so the console records the ID together with the creation time and never relies on the device name.

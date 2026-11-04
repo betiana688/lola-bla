@@ -75,6 +75,6 @@ erDiagram
 
 ## Planned vs. built
 
-This diagram is the target model. The current `schema.sql` (see [database.md](../reference/database.md)) has `groups`, `contacts`, `messages` and `log_entries`. `users`, `accounts` and `audit_log` come with the console.
+This diagram is the design. The built schema is `app/local_data/schema.sql` (see [database.md](../reference/database.md)): `users`, `accounts`, `groups` (with `account_id`), `contacts`, `messages`, `log_entries` and `audit_log`, checked against the live database table by table and column by column.
 
 > Open point: `messages.playback_position_sec` (resume paused playback) exists in `schema.sql` but is missing from this diagram.

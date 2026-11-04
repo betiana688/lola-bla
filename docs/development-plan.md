@@ -71,6 +71,17 @@ Rather than patch around the local performance ceiling, the app was rebuilt on a
 11. Reviewed and tightened file-level access control (previously default-permissive) rather than assuming the architecture alone was sufficient
 12. Verified real conversation latency throughout — consistently well within target, a direct validation of the architectural change
 
+### Phase 3 — Reliability, the repo and the console (28 October to 4 November 2026)
+
+1. Closed the Signal API to the network (it listens on the Pi only) and moved the Signal account into the database (`users`, `accounts`), with a backup and a migration.
+2. Made "not linked" a normal state: the app detects it, says so kindly, never records a message it cannot send, and a failed send keeps the recording. A recording is kept only if something was heard.
+3. Fixed a dropped live connection during long tool calls (blocking work moved to worker threads).
+4. Gave the messaging assistant its own token, and added a local keyword fallback for when its cloud call fails (no credits, expired token).
+5. Added a background sync every 2 minutes: a check dropped from about 7.5 seconds to under a second.
+6. Put everything in one repo: our files inside Pollen's clone are links into it, Pollen's app is pinned to the commit we run plus a two-line patch, data and secrets stay outside the repo, `app/install.sh` rebuilds a fresh install and `save.sh` scans for secrets before every push.
+7. Fixed group matching so "Test" never plays "Another test".
+8. Console: the first user from the Pi (step 5); HTTPS sign-in with lockout, signed sessions and CSRF protection (step 6); change password (step 7); the Signal page with linking by QR code (step 8a). Real-browser testing caught a bug the offline tests missed (the Origin check combined with `Referrer-Policy: no-referrer`), and linking was tested against a throwaway Signal API and a copy of the database, never the live ones.
+
 ## 4. Architecture
 
 Two agents, kept deliberately separate:
@@ -152,14 +163,14 @@ Key decisions: Signal's own group identifier is stored in its raw form and conve
 |---|---|
 | 1 — Reading messages | ✅ Complete |
 | 2 — Sending messages | ✅ Complete |
-| 3 — Configuration console | 🔜 Not yet built |
+| 3 — Configuration console | 🔨 In progress: sign-in, change password and Signal linking are built; unlink, groups, contacts and logs are next |
 | 4 — Performance, security, privacy | ✅ Complete and verified |
 
 ## 7. Backlog
 
-- Configuration console (Story 3)
+- Configuration console (Story 3): unlink (step 8b), the groups, contacts and logs pages, then run it as a service
 - Robot software version currently one release behind its own SDK
 - Recording is capped at a maximum duration rather than being fully open-ended
-- Two third-party dependencies not pinned to a specific version
+- The Signal API image is pinned only on this Pi (a local tag); `app/install.sh` does not set it up yet
 - Two small local modifications to the third-party conversation engine not yet upstreamed
 - Recorded audio sent in its captured format rather than converted to a more universal one first

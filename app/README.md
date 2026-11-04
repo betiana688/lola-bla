@@ -19,7 +19,9 @@ The running Lola-Bla code. It plugs into a clone of Pollen Robotics' [`reachy_mi
 
 | Variable | Purpose |
 |---|---|
-| `LOLA_SIGNAL_NUMBER` | The linked Signal account number, e.g. `+49...` |
+| `LOLA_NO_BACKGROUND_SYNC` | Set to `1` to switch off the 2-minute background sync (the tests do this) |
+
+The Signal account number is not a setting any more: it lives in the `accounts` table of the database and is set by linking from the console. The messaging assistant's own Hugging Face token lives in `local_data/hf_token` (owner-only, never committed).
 
 ## Patches to the conversation app
 

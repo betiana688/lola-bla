@@ -32,7 +32,7 @@ On top of that: only the family administrator (me) can access the underlying dat
 - ✅ Reading messages
 - ✅ Recording and sending replies
 - ✅ Natural conversation, performance, and safety guardrails
-- 🔜 **A web-based configuration console**, so approving groups/contacts and reviewing logs won't require touching a database by hand — currently managed manually as an interim step
+- 🔨 **A web-based configuration console**: signing in over HTTPS, changing the password and linking Signal are built; managing groups and contacts and viewing logs come next. Until then, approvals are managed by hand.
 
 ## Running it
 
@@ -58,7 +58,7 @@ chmod 700 local_data local_data/audio
 chmod 600 local_data/lola.db local_data/messaging_agent.py local_data/messaging_executor.py
 ```
 
-Copy the files from [`app/`](app/README.md) into the clone, set your Signal number with `export LOLA_SIGNAL_NUMBER=+49...`, then register approved groups/contacts directly via `sqlite3` (a proper console is on the way — see Status above).
+Copy the files from [`app/`](app/README.md) into the clone, then link your Signal account from the console (the Signal account page; the number is stored in the database, not in a setting) and register approved groups and contacts directly via `sqlite3` (the Groups and Contacts pages are on the way).
 
 Run it:
 
@@ -68,9 +68,11 @@ REACHY_MINI_CUSTOM_PROFILE=lola reachy-mini-conversation-app --no-camera
 
 ## Known limitations
 
-- No configuration console yet — approvals are managed by hand
+- The console cannot yet unlink Signal, manage groups and contacts, or show logs: approvals are still managed by hand
+- The console password minimum is short on purpose (5 characters); the sign-in lockout (5 tries, 15 minutes) is the protection
+- The messaging assistant needs Hugging Face credits; without them a simple local fallback keeps messaging working
 - Fixed maximum recording length (30s), with automatic stop after ~5 seconds of silence
-- A couple of small local patches to the underlying conversation engine aren't yet upstreamed
+- Two small local patches to the underlying conversation engine are kept as a patch file (`app/patches`) and are not yet upstreamed
 
 ## Documentation
 

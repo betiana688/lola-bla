@@ -23,7 +23,7 @@ Reflects the currently running system. An earlier, fully-local prototype (using 
 
 | Component | Source | Version |
 |---|---|---|
-| `reachy_mini_conversation_app` | `github.com/pollen-robotics/reachy_mini_conversation_app` | 1.0.1, installed editable from a plain git clone — **not pinned to a specific commit** |
+| `reachy_mini_conversation_app` | `github.com/pollen-robotics/reachy_mini_conversation_app` | 1.0.1, pinned to commit `b9f58a3` (`app/patches/POLLEN_COMMIT`) |
 | `reachy-mini` SDK | PyPI | 1.11.0 (the robot's own daemon is one version behind, at 1.10.0 — known, tracked, not yet resolved) |
 | `fastrtc` | PyPI (dependency of the above) | Not independently pinned |
 | `mcp` (Model Context Protocol) | PyPI (dependency of the above) | `>=1.27.1,<2` |
@@ -64,10 +64,36 @@ Reflects the currently running system. An earlier, fully-local prototype (using 
 | `main.py` | Exposes the live audio session to tools, so recording can pause/resume the conversation's own mic without disrupting it |
 | `tools/core_tools.py` | Added the field that carries this reference through |
 
-These are local, uncommitted edits to a third-party package — they'll be lost on a fresh reinstall and must be reapplied, or upstreamed as a proper contribution.
+The edits are kept as a patch file (`app/patches/pollen-conversation-app.patch`) and applied by `app/install.sh` to the pinned commit. They are not yet upstreamed.
 
 ## Known gaps
 
-- `reachy_mini_conversation_app` and `signal-cli-rest-api` both unpinned to specific versions — a future reinstall could silently pull different code
-- The two local patches above exist only as manual edits, not as a tracked diff/fork
+- `signal-cli-rest-api` is pinned only on this Pi, as the local Docker tag `signal-cli-rest-api-local:0.100`; `app/install.sh` does not set it up yet
+- The pip step of `app/install.sh` is untested (everything else in it was tested against a pristine checkout)
 - No formal license audit has been performed on any dependency
+
+## Console and tooling (added 2026-11-04)
+
+| Component | Version | Notes |
+|---|---|---|
+| `starlette` | 0.52.1 | Web framework (already in the project's Python environment) |
+| `uvicorn` | 0.53.0 | Web server, serves HTTPS |
+| `Jinja2` | 3.1.6 | Page templates |
+| `python-multipart` | 0.0.32 | Reads form posts |
+| `cryptography` | 50.0.1 | Creates the self-signed certificate |
+| `httpx` | 0.28.1 | Tests only |
+| scrypt (Python standard library) | n/a | Password hashing; the console uses no other password library |
+
+Versions are listed in `console/requirements.txt`.
+
+| New custom code | Purpose |
+|---|---|
+| `app/local_data/background_sync.py` | Pulls new Signal messages into the database every 2 minutes |
+| `console/` | The configuration console (sign-in, password, Signal page) and its tests |
+| `app/install.sh`, `save.sh` | Fresh install pinned to Pollen's commit; save to GitHub after a secrets scan |
+| `app/patches/` | The two edits to Pollen's app, and the exact commit they apply to |
+
+Known gaps added 2026-11-04:
+
+- The messaging assistant needs Hugging Face Inference credits; at zero, a local keyword fallback takes over.
+- No Keycloak yet; the console password is short on purpose (5 characters).

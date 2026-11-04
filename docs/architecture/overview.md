@@ -144,7 +144,8 @@ sequenceDiagram
 - Message audio (incoming and recorded replies) never leaves the Pi. Agents only get metadata: names, counts, timestamps.
 - Only allow-listed Signal groups and registered contacts are processed.
 - Every read and write of private data goes to `audit_log`.
-- Signal API listens on the Pi only; the console is LAN only.
+- Signal API listens on the Pi only; the console is reachable on the home network over HTTPS and needs a password.
+- The messaging assistant uses its own Hugging Face token (`local_data/hf_token`, owner-only, never committed).
 
 ## Decisions
 
@@ -154,3 +155,10 @@ sequenceDiagram
 - Filtering by allow-listed groups, not individual senders.
 - Mic handoff by muting the stream, not releasing the device.
 - Reachy's antennas not used for now.
+- The Messaging Agent falls back to simple local keyword rules when its cloud call fails (no credits, bad token, no network). When unsure the rules only check; they never play or send. After a failure the cloud is skipped for 5 minutes, and the switch is written to the activity log.
+- New messages are pulled into the database by a background sync inside the app every 2 minutes, so "check my messages" reads the database instead of waiting on Signal.
+- A failed send keeps the recording, and a recording is kept only if something was heard.
+- A group is chosen by its exact name: "Test" never means "Another test". An unknown or ambiguous name plays nothing.
+- Console: HTTPS with a self-signed certificate; password login with a deliberately short minimum (5 characters) and a strict lockout (5 tries, 15 minutes); Keycloak later.
+- Unlink is a guided action, because only the phone can revoke a linked device.
+- Our files inside Pollen's clone are links into this repo (one copy of each). Data and secrets stay outside the repo. Pollen's app is pinned to commit `b9f58a3` plus a two-line patch (`app/patches`).
