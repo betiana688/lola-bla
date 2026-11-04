@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Contacts - Lola-Bla console{% endblock %}
+{% block body %}
+<h1>Contacts</h1>
+<p>Group: <strong>{{ group.name }}</strong>{% if not group.active %} (inactive){% endif %}</p>
+{% if flash %}<p class="notice" role="status">{{ flash }}</p>{% endif %}
+<p>Only these people can send messages that Reachy will play from this group. Anyone else is ignored.</p>
+{% for c in contacts %}
+<section class="group">
+  <h2>{{ c.name }}</h2>
+  <p>{{ c.number }} &middot; {{ c.messages }} message{{ "" if c.messages == 1 else "s" }}</p>
+  <form method="post" action="/contacts/rename" class="inline">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="id" value="{{ c.id }}">
+    <input type="hidden" name="group" value="{{ group.id }}">
+    <input name="name" type="text" value="{{ c.name }}" maxlength="40" aria-label="Spoken name" required>
+    <button type="submit" class="secondary">Rename</button>
+  </form>
+  <details>
+    <summary>Remove this contact</summary>
+    <p>This removes {{ c.name }} and deletes their {{ c.messages }} message{{ "" if c.messages == 1 else "s" }}, including the audio files. It cannot be undone.</p>
+    <form method="post" action="/contacts/remove">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="id" value="{{ c.id }}">
+      <input type="hidden" name="group" value="{{ group.id }}">
+      <label for="rm-confirm-{{ loop.index }}">Type {{ remove_word }} to confirm</label>
+      <input id="rm-confirm-{{ loop.index }}" name="confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+      <label for="rm-pw-{{ loop.index }}">Your password</label>
+      <div class="row">
+        <input id="rm-pw-{{ loop.index }}" name="password" type="password" autocomplete="current-password" required>
+        <button type="button" class="secondary" data-toggle-password="rm-pw-{{ loop.index }}" aria-pressed="false">Show</button>
+      </div>
+      <button type="submit">Remove</button>
+    </form>
+  </details>
+</section>
+{% else %}
+<p>No contacts approved in this group yet.</p>
+{% endfor %}
+<p><a href="/contacts/add?group={{ group.id | urlencode }}">Add a contact</a></p>
+<p><a href="/groups">Back to groups</a></p>
+{% endblock %}

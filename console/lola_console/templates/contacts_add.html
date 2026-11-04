@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Add a contact - Lola-Bla console{% endblock %}
+{% block body %}
+<h1>Add a contact</h1>
+<p>Group: <strong>{{ group.name }}</strong></p>
+{% if flash %}<p class="notice" role="status">{{ flash }}</p>{% endif %}
+<p>These are the people in your Signal contacts who have a phone number and are not approved in this group yet. The spoken name is what Reachy says; it starts as their name in Signal.</p>
+<form method="get" action="/contacts/add" class="inline">
+  <input type="hidden" name="group" value="{{ group.id }}">
+  <input name="q" type="search" value="{{ q }}" maxlength="60" aria-label="Search contacts">
+  <button type="submit" class="secondary">Search</button>
+</form>
+{% if message %}<p class="notice">{{ message }}</p>{% endif %}
+{% for i in items %}
+<section class="group">
+  <h2>{{ i.name }}</h2>
+  <p>{{ i.number }}</p>
+  <form method="post" action="/contacts/add" class="inline">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="group" value="{{ group.id }}">
+    <input type="hidden" name="ref" value="{{ i.ref }}">
+    <input name="name" type="text" value="{{ i.default_name }}" maxlength="40" aria-label="Spoken name" required>
+    <button type="submit">Add</button>
+  </form>
+</section>
+{% endfor %}
+<p><a href="/contacts?group={{ group.id | urlencode }}">Back to contacts</a></p>
+{% endblock %}

@@ -176,3 +176,19 @@ Spoken names are 1 to 40 characters and must differ from every other group's nam
 The audit log records `group_added`, `group_renamed`, `group_activated`, `group_deactivated` and `group_removed` with the group's internal ID and never its name. The activity log records only counts.
 
 Known limits: removing a group while the robot holds an unsent recording for it makes that send fail (the recording is kept, as for any failed send), and a message that arrives during a removal may fail to be saved and show up as an error in the activity log. That the robot picks up changes on its next check, with no restart, is expected from how it reads the database and still to be confirmed on the robot.
+
+### Contacts (step 10)
+
+Each group on the Groups page has a "Contacts" link to `/contacts?group=...`, which lists that group's approved contacts with their spoken name, a masked number and their message count.
+
+| Action | What it does |
+|---|---|
+| Add a contact | `/contacts/add` lists the people in the Signal contact list who have a phone number, are not blocked and are not approved in this group yet, with a search box by name. A form never contains a phone number: it carries an opaque handle that the console turns back into the number by asking Signal again. The number is saved, the spoken name starts as the person's name in Signal. Adding needs no extra password (a deliberate choice: anyone at a signed-in browser could approve a contact) |
+| Rename | Changes the spoken name |
+| Remove | Needs the word `REMOVE` and the password, and says first how many messages will go. Deletes the contact, their messages and the audio files of those messages, with the same safeguards as removing a group (only files inside the app's audio folder; symbolic links are never followed) |
+
+Only people with a phone number in the Signal contact list can be approved. This is deliberate: the author wants to know the number of everyone who can talk to the child, so people who appear in large groups only as hidden IDs are out of scope. Spoken names must differ within a group, ignoring case, punctuation and "&" versus "and", because the robot picks a sender by name.
+
+The audit log records `contact_added`, `contact_renamed` and `contact_removed` with the contact's internal ID, never a name or number. The activity log records only counts.
+
+Known limit: if a person hides their number from group members, Signal may deliver their message with only an ID, and the robot ignores it as an unknown sender (it shows in the activity log).

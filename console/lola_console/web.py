@@ -11,6 +11,7 @@ import secrets
 import time
 import uuid
 from datetime import datetime, timezone
+from urllib.parse import quote
 from pathlib import Path
 
 from starlette.applications import Starlette
@@ -23,7 +24,7 @@ from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-from . import auth, groupadmin, link, signal_api, users
+from . import auth, contactadmin, groupadmin, link, signal_api, users
 from .sessions import SESSION_SECONDS, Signer, load_or_create_secret
 
 BASE = Path(__file__).parent
@@ -707,6 +708,102 @@ async def groups_remove_post(request):
     return _group_redirect(app, groupadmin.removal_summary(result))
 
 
+def _contacts_url(group_id, page="/contacts"):
+    return page + "?group=" + quote(group_id, safe="")
+
+
+def _back_to(form):
+    group_id = str(form.get("group", ""))[:60]
+    return _contacts_url(group_id) if group_id else "/groups"
+
+
+async def contacts_get(request):
+    user = _current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    app = request.app
+    group_id = str(request.query_params.get("group", ""))[:60]
+    group = await run_in_threadpool(_with_con, app.state.db_path, contactadmin.group_info, group_id)
+    if not group:
+        return _group_redirect(app, "That group no longer exists.")
+    items = await run_in_threadpool(_with_con, app.state.db_path, contactadmin.list_contacts, group_id)
+    flash, app.state.flash = app.state.flash, None
+    return templates.TemplateResponse(request, "contacts.html", {
+        "group": group, "contacts": items, "csrf": user["csrf"], "flash": flash, "remove_word": GROUP_REMOVE_WORD})
+
+
+async def contacts_add_get(request):
+    user = _current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    app = request.app
+    group_id = str(request.query_params.get("group", ""))[:60]
+    query = str(request.query_params.get("q", ""))[:60]
+    group = await run_in_threadpool(_with_con, app.state.db_path, contactadmin.group_info, group_id)
+    if not group:
+        return _group_redirect(app, "That group no longer exists.")
+    result = await run_in_threadpool(_with_con, app.state.db_path, contactadmin.available_from_signal,
+                                     app.state.signal, app.state.signer.secret, group_id, query)
+    flash, app.state.flash = app.state.flash, None
+    return templates.TemplateResponse(request, "contacts_add.html", {
+        "group": group, "items": result["items"], "message": result["message"], "q": query,
+        "csrf": user["csrf"], "flash": flash})
+
+
+async def contacts_add_post(request):
+    user, form, error = await _group_post(request)
+    if error:
+        return error
+    app = request.app
+    group_id = str(form.get("group", ""))[:60]
+    try:
+        await run_in_threadpool(_with_con, app.state.db_path, contactadmin.add_contact, app.state.signal,
+                                app.state.signer.secret, group_id, str(form.get("ref", ""))[:100],
+                                str(form.get("name", ""))[:200], f"console:{user['username']}")
+    except groupadmin.GroupError as e:
+        return _group_redirect(app, str(e), _contacts_url(group_id, "/contacts/add"))
+    return _group_redirect(app, "Contact added.", _contacts_url(group_id))
+
+
+async def contacts_rename_post(request):
+    user, form, error = await _group_post(request)
+    if error:
+        return error
+    app = request.app
+    try:
+        group_id = await run_in_threadpool(_with_con, app.state.db_path, contactadmin.rename_contact,
+                                           str(form.get("id", ""))[:60], str(form.get("name", ""))[:200],
+                                           f"console:{user['username']}")
+    except groupadmin.GroupError as e:
+        return _group_redirect(app, str(e), _back_to(form))
+    return _group_redirect(app, "Name saved.", _contacts_url(group_id))
+
+
+async def contacts_remove_post(request):
+    user, form, error = await _group_post(request)
+    if error:
+        return error
+    app = request.app
+    who = f"console:{user['username']}"
+    back = _back_to(form)
+    if str(form.get("confirm", "")).strip() != GROUP_REMOVE_WORD:
+        return _group_redirect(app, f"Nothing was removed. Type {GROUP_REMOVE_WORD} in capital letters to confirm.", back)
+    con = _connect(request)
+    try:
+        problem = await _reauthenticate(con, user, str(form.get("password", "")), who, what="remove")
+    finally:
+        con.close()
+    if problem:
+        return _group_redirect(app, problem, back)
+    audio_dir = Path(app.state.db_path).parent / "audio"
+    try:
+        result = await run_in_threadpool(_with_con, app.state.db_path, contactadmin.remove_contact,
+                                         str(form.get("id", ""))[:60], who, audio_dir)
+    except groupadmin.GroupError as e:
+        return _group_redirect(app, str(e), back)
+    return _group_redirect(app, contactadmin.removal_summary(result), _contacts_url(result["group_id"]))
+
+
 def create_app(db_path=None, secret=None, allowed_hosts=None, signal_client=None, device_name=None):
     middleware = [Middleware(SecurityHeaders)]
     if allowed_hosts:
@@ -730,6 +827,11 @@ def create_app(db_path=None, secret=None, allowed_hosts=None, signal_client=None
         Route("/groups/rename", groups_rename_post, methods=["POST"]),
         Route("/groups/active", groups_active_post, methods=["POST"]),
         Route("/groups/remove", groups_remove_post, methods=["POST"]),
+        Route("/contacts", contacts_get, methods=["GET"]),
+        Route("/contacts/add", contacts_add_get, methods=["GET"]),
+        Route("/contacts/add", contacts_add_post, methods=["POST"]),
+        Route("/contacts/rename", contacts_rename_post, methods=["POST"]),
+        Route("/contacts/remove", contacts_remove_post, methods=["POST"]),
         Mount("/static", StaticFiles(directory=str(BASE / "static")), name="static"),
     ]
     app = Starlette(routes=routes, middleware=middleware)

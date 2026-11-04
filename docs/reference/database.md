@@ -57,6 +57,8 @@ sqlite3 ~/lola-bla-agents/reachy_mini_conversation_app/local_data/lola.db "UPDAT
 
 ## Managing contacts
 
+The console's Contacts page does this now (add from your Signal contacts, rename, remove). The commands below still work.
+
 **Register a contact within a group** (required before Reachy will treat their messages as legitimate — see Story 3):
 ```bash
 sqlite3 ~/lola-bla-agents/reachy_mini_conversation_app/local_data/lola.db "INSERT INTO contacts (id, group_id, name, signal_id) VALUES ('contact-1', 'grp-1', 'Betiana', 'THEIR_SIGNAL_NUMBER');"

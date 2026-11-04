@@ -118,6 +118,29 @@ class ClientTests(unittest.TestCase):
         self.answer("GET", "/v1/accounts", body=[])
         self.assertEqual(ro.accounts(), [])
 
+    def test_contacts_are_reduced_to_what_the_console_needs(self):
+        raw = [{"number": "+49100", "uuid": "u-1", "name": "Ana", "profile_name": "A", "blocked": False},
+               {"number": "+49200", "uuid": "", "name": "", "profile_name": "", "given_name": "",
+                "nickname": {"given_name": "", "family_name": ""}, "blocked": False},
+               {"number": "+49300", "name": "", "profile_name": "Cleo P", "blocked": True},
+               {"number": "", "uuid": "u-4", "name": "No number", "blocked": False},
+               {"uuid": "u-5", "name": "Also none"},
+               {"number": "+49400", "name": "", "nickname": {"given_name": "Dani", "family_name": "G"}}]
+        self.answer("GET", f"/v1/contacts/{NUMBER}", body=raw)
+        self.assertEqual(self.api.contacts(NUMBER), [
+            {"number": "+49100", "name": "Ana", "blocked": False},
+            {"number": "+49200", "name": "", "blocked": False},
+            {"number": "+49300", "name": "Cleo P", "blocked": True},
+            {"number": "+49400", "name": "Dani G", "blocked": False}])
+
+    def test_contacts_with_an_unexpected_shape_or_an_unregistered_number(self):
+        self.answer("GET", f"/v1/contacts/{NUMBER}", body={"a": 1})
+        with self.assertRaises(SignalApiError):
+            self.api.contacts(NUMBER)
+        self.answer("GET", f"/v1/contacts/{NUMBER}", status=400, body=b'{"error":"User is not registered."}')
+        with self.assertRaises(NotRegistered):
+            self.api.contacts(NUMBER)
+
     def test_qr(self):
         self.answer("GET", "/v1/qrcodelink?device_name=reachy-mini", body=PNG, ctype="image/png")
         self.assertEqual(self.api.qr_png("reachy-mini"), PNG)

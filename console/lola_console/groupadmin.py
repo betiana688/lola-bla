@@ -15,10 +15,10 @@ class GroupError(Exception):
     """Something the person can fix. The text is safe to show."""
 
 
-def clean_name(text):
+def clean_name(text, what="group"):
     name = re.sub(r"\s+", " ", text or "").strip()
     if not name:
-        raise GroupError("Type a name for the group.")
+        raise GroupError(f"Type a name for the {what}.")
     if len(name) > NAME_MAX:
         raise GroupError(f"The name is too long (at most {NAME_MAX} characters).")
     if any(ord(c) < 32 or ord(c) == 127 for c in name):

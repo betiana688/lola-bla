@@ -20,6 +20,7 @@
     <input type="hidden" name="active" value="{{ 0 if g.active else 1 }}">
     <button type="submit" class="secondary">{{ "Deactivate" if g.active else "Activate" }}</button>
   </form>
+  <p><a href="/contacts?group={{ g.id | urlencode }}">Contacts ({{ g.contacts }})</a></p>
   <details>
     <summary>Remove this group</summary>
     <p>This deletes the group, its contacts ({{ g.contacts }}) and its messages ({{ g.messages }}), including their audio files. It cannot be undone. To keep everything and only stop Reachy using it, use Deactivate.</p>

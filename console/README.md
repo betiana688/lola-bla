@@ -50,3 +50,7 @@ The Groups page lists the approved groups and lets you add one from the groups y
 | Setting | Purpose |
 |---|---|
 | `LOLA_SIGNAL_READONLY` | Set to `1` to make the console's Signal client refuse everything except reading. Use it with `LOLA_DB` pointing at a copy of the database to try the console against the real Signal API without being able to change it |
+
+## Step 10: contacts
+
+Each group on the Groups page has a Contacts page. Add a person from your Signal contacts (only people with a phone number), rename them, or remove them, which deletes their messages and audio and needs the word REMOVE and your password. Numbers are shown masked.

@@ -95,3 +95,8 @@
 - Step 10 (contacts): the real group list has 89 member entries, 65 of them Signal UUIDs and 24 phone numbers. Names are known only for contacts in the contact list, and only a few of those carry a UUID, so most members cannot be named automatically. To be designed next.
 - Tried in a browser on 2026-11-04 on a copy of the database with the real Signal group list: adding a group and removing it worked, by the author's report. Not individually confirmed: rename, deactivate and activate, the wrong-word and wrong-password refusals, and that the robot picks up group changes on its next check without a restart.
 - Possible race: a message arriving while its group is being removed.
+
+### Console step 10 (2026-11-04)
+- Decision: adding a contact needs no extra password (the author's choice). Revisit if the console is ever reachable by anyone else.
+- Limit: a contact who hides their number from group members may arrive as an ID only and be ignored as an unknown sender. A second contact row holding the ID would fix it, but it needs the ID, which only some contacts have.
+- Not yet tried: the Contacts pages in a browser against the real contact list, and that the robot picks up contact changes on its next check without a restart.

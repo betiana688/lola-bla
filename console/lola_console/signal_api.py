@@ -22,6 +22,19 @@ class NotRegistered(SignalApiError):
     """The Signal API says this number is not registered."""
 
 
+def _best_name(contact):
+    """The name to show for a contact: the name saved in the phone's address book, else the nickname,
+    else the name the person chose in Signal. Empty if there is none."""
+    nick = contact.get("nickname")
+    nick_text = ""
+    if isinstance(nick, dict):
+        nick_text = " ".join(v.strip() for v in nick.values() if isinstance(v, str) and v.strip())
+    for value in (contact.get("name"), nick_text, contact.get("profile_name"), contact.get("given_name")):
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
 def _number_path(number):
     return urllib.parse.quote(number, safe="+")
 
@@ -85,6 +98,20 @@ class SignalApi:
             raise SignalApiError("unexpected answer from the Signal API")
         return [{"internal_id": g["internal_id"], "name": g["name"], "member_count": len(g.get("members", [])),
                  "blocked": bool(g.get("blocked", False))} for g in data]
+
+    def contacts(self, number):
+        """The Signal contact list, reduced to what the console needs: phone number, a display name and
+        blocked. Entries without a phone number are left out, and Signal IDs are never passed on."""
+        data = self._json("/v1/contacts/" + _number_path(number))
+        if not isinstance(data, list) or not all(isinstance(c, dict) for c in data):
+            raise SignalApiError("unexpected answer from the Signal API")
+        result = []
+        for c in data:
+            phone = c.get("number")
+            if not isinstance(phone, str) or not phone.startswith("+"):
+                continue
+            result.append({"number": phone, "name": _best_name(c), "blocked": bool(c.get("blocked", False))})
+        return result
 
     def qr_png(self, device_name):
         self._deny_write()
