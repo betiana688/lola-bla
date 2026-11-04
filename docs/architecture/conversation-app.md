@@ -25,7 +25,9 @@ sequenceDiagram
   CA-->>Child: "You have 2 messages from Michael, want to hear them?"
 ```
 
-### Syncing from Signal (`sync.py`)
+### Syncing from Signal (`_sync_messages` in `messaging_executor.py`)
+
+A background thread inside the app runs this every 2 minutes. `check_messages` syncs by itself only if the last good sync is older than 5 minutes.
 
 ```mermaid
 flowchart TD
@@ -45,9 +47,9 @@ flowchart TD
     L -->|yes| N{Sender matches a<br/>registered CONTACT?}
     N -->|no| O[Log: unknown_sender]
     N -->|yes| P{Has audio attachment?}
-    P -->|no| Q[Log: non_audio_message]
+    P -->|no| Q[Skip: not a voice message]
     P -->|yes| R[Download attachment,<br/>convert to WAV via ffmpeg]
-    R --> S[Insert into MESSAGES<br/>Log: message_synced]
+    R --> S[Insert into MESSAGES<br/>audit_log entry; a failed download is logged as download_failed]
 ```
 
 ## States
@@ -89,14 +91,16 @@ stateDiagram-v2
 
 ```mermaid
 flowchart TD
-    A[__call__ task_description] --> B[messaging_agent.handle_task]
+    A[__call__ task_description] --> B[messaging_agent.handle_task<br/>if it raises: Return service_unavailable]
     B --> C{status?}
     C -->|check_only / play_messages result| D[Return as-is - already minimal]
 
-    C -->|need_recording| E{Group resolved?<br/>by name, or the only active one}
+    C -->|need_recording| NL{Signal linked?}
+    NL -->|no| NLR[Return: not_linked]
+    NL -->|yes| E{Group resolved?<br/>exact name, or the only active one}
     E -->|no| F[Return: need_group_clarification<br/>+ available_groups]
-    E -->|yes| G[_record_message: mute mic,<br/>arecord 8s shared device, unmute]
-    G --> H{Recording OK?}
+    E -->|yes| G[_record_message: mute mic, start beep,<br/>sox until 5 s of silence or 30 s, done beep, unmute<br/>runs in a worker thread]
+    G --> H{Recording OK and<br/>something heard?}
     H -->|no| I[Return: recording_failed]
     H -->|yes| J[Store _pending_recording<br/>group_id + group_name]
     J --> K[Return: recorded + group_name]
@@ -111,7 +115,7 @@ flowchart TD
     P -->|yes| Q[executor.send_message]
     Q --> R{Sent OK?}
     R -->|yes| S[Clear _pending_recording<br/>Return: sent]
-    R -->|no| T[Return: send_failed]
+    R -->|no| T[Return: send_failed or not_linked<br/>the recording is KEPT]
 
     C -->|rerecord| U{_pending_recording<br/>exists?}
     U -->|no| M
@@ -124,6 +128,8 @@ flowchart TD
 ```mermaid
 flowchart TD
     A[handle_task task_description] --> B[One-shot LLM call,<br/>SYSTEM_PROMPT + the 6 sub-tools]
+    B -.->|call fails: no credits, bad token, no network| FB[Local keyword rules,<br/>cloud skipped for 5 minutes,<br/>when unsure: check only]
+    FB -.-> E
     B --> C{No tool_call<br/>returned?}
     C -->|yes| D[Return: unclear]
     C -->|no| E{Which sub-tool<br/>was picked?}
@@ -142,7 +148,9 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A1[check_messages] --> A2[_sync_messages: GET /v1/receive,<br/>download+convert new audio,<br/>INSERT + audit_log]
+    A1[check_messages] --> AL{Linked?}
+    AL -->|no| ALN[Return: not_linked]
+    AL -->|yes| A2[sync from Signal only if the last good sync is older than 5 min,<br/>download+convert new audio, INSERT + audit_log]
     A2 --> A3{Any unplayed<br/>messages?}
     A3 -->|no| A4[Return: no_new_messages]
     A3 -->|yes| A5[Build full-detail dict:<br/>sender, day, time, audio_path<br/>per group]
@@ -158,7 +166,7 @@ flowchart TD
     D2 --> D3[Encode audio + recipient ID]
     D3 --> D4[POST /v2/send]
     D4 --> D5{Success?}
-    D5 -->|no| D6[Return: failed + detail]
+    D5 -->|no| D6[Return: failed, or not_linked<br/>activity-log entry, no detail returned]
     D5 -->|yes| D7[INSERT outgoing message,<br/>audit_log write]
     D7 --> D8[Return: sent]
 ```

@@ -36,35 +36,43 @@ On top of that: only the family administrator (me) can access the underlying dat
 
 ## Running it
 
-Requires a Reachy Mini Wireless, a linked Signal account, and a Hugging Face account.
+Needs a Reachy Mini Wireless with its daemon running, a Signal account on your phone, Docker, `sox`, `ffmpeg`, `sqlite3` and a Hugging Face account. The install script has been tested in a scratch folder except for its Python-environment step, so treat a first install as a dry run.
+
+### Install
 
 ```bash
-# Project + venv
-mkdir -p ~/lola-bla-agents && cd ~/lola-bla-agents
-python3 -m venv venv && source venv/bin/activate
-
-# The conversation engine (built on Pollen Robotics' open-source Reachy Mini app)
-git clone https://github.com/pollen-robotics/reachy_mini_conversation_app.git
-cd reachy_mini_conversation_app
-pip install -e .
-
-# Auth
-hf auth login
-
-# Local data
-mkdir -p local_data
-sqlite3 local_data/lola.db < local_data/schema.sql
-chmod 700 local_data local_data/audio
-chmod 600 local_data/lola.db local_data/messaging_agent.py local_data/messaging_executor.py
+git clone https://github.com/betiana688/lola-bla.git
+cd lola-bla
+./app/install.sh
 ```
 
-Copy the files from [`app/`](app/README.md) into the clone, then link your Signal account from the console (the Signal account page; the number is stored in the database, not in a setting) and register approved groups and contacts directly via `sqlite3` (the Groups and Contacts pages are on the way).
+The script clones Pollen's app at the commit we run, applies our two-line patch, links our files into it (one copy of each, in this repo), creates the database and sets up the Python environment.
 
-Run it:
+### Then, by hand
 
-```bash
-REACHY_MINI_CUSTOM_PROFILE=lola reachy-mini-conversation-app --no-camera
-```
+1. Start the Signal API so that it listens on this machine only. We run version 0.100 (see `/v1/about`); pin the image to a version once you know which one works for you.
+   ```bash
+   docker run -d --name signal-api --restart=always -p 127.0.0.1:8080:8080 -v $HOME/.local/share/signal-api:/home/.local/share/signal-cli -e MODE=native bbernhard/signal-cli-rest-api
+   ```
+2. From the repo folder, create the console user and its certificate, then start the console, open `https://reachy-mini.local:9443/`, sign in, and link your Signal account on its Signal page (scan the QR code in Signal, under Linked devices):
+   ```bash
+   source ~/lola-bla-agents/venv/bin/activate
+   python3 console/manage.py create-user
+   python3 console/manage.py make-cert
+   python3 console/run.py
+   ```
+3. Give the messaging assistant its own Hugging Face token, in a file only you can read, and log in to Hugging Face for the live conversation:
+   ```bash
+   read -rs -p "Token: " T; echo
+   ( umask 177; printf '%s' "$T" > ~/lola-bla-agents/reachy_mini_conversation_app/local_data/hf_token ); unset T
+   hf auth login
+   ```
+4. Add your approved groups and contacts. For now that is done with `sqlite3` (see [docs/reference/database.md](docs/reference/database.md)); the console pages for it are coming.
+5. Start the app:
+   ```bash
+   cd ~/lola-bla-agents/reachy_mini_conversation_app
+   REACHY_MINI_CUSTOM_PROFILE=lola reachy-mini-conversation-app --no-camera
+   ```
 
 ## Known limitations
 

@@ -4,7 +4,7 @@
 |---|---|
 | 1 — Reading messages | ✅ Complete |
 | 2 — Replying to messages | ✅ Complete |
-| 3 — Configuring the app | 🔜 Not yet built |
+| 3 — Configuring the app | 🔨 In progress: sign-in, password and Signal linking are built; unlink, groups, contacts and logs are next |
 | 4 — Performance, security, privacy | ✅ Complete and verified |
 
 ## Story 1: Reading messages

@@ -2,7 +2,9 @@
 
 The running Lola-Bla code. It plugs into a clone of Pollen Robotics' [`reachy_mini_conversation_app`](https://github.com/pollen-robotics/reachy_mini_conversation_app).
 
-## Where each file goes on the robot
+## Which file does what
+
+`install.sh` links each of these files into the clone, so there is one copy of each and nothing to copy by hand.
 
 | In this repo | In the conversation app clone | Role |
 |---|---|---|
@@ -10,6 +12,7 @@ The running Lola-Bla code. It plugs into a clone of Pollen Robotics' [`reachy_mi
 | `tools/test_mic_handoff.py` | `src/reachy_mini_conversation_app/tools/` | Diagnostic tool proving the mic handoff |
 | `local_data/messaging_agent.py` | `local_data/` | Messaging Agent: one-shot LLM call that picks the action |
 | `local_data/messaging_executor.py` | `local_data/` | The only code that touches the database or Signal |
+| `local_data/background_sync.py` | `local_data/` | Pulls new Signal messages into the database every 2 minutes, inside the app |
 | `local_data/schema.sql` | `local_data/` | Database schema |
 | [`../profiles/lola/profile.md`](../profiles/lola/profile.md) | `profiles/lola/` | Personality, safety rules, voice, tools |
 
@@ -27,12 +30,12 @@ The Signal account number is not a setting any more: it lives in the `accounts` 
 
 [`patches/pollen-conversation-app.patch`](patches/pollen-conversation-app.patch) adds two lines (`main.py`, `tools/core_tools.py`) that expose the live audio session to tools as `deps.stream_manager`. Without it, recording fails.
 
-Tested against Pollen's commit `215880b` (2026-09-11, between v1.0.1 and v1.1.0). It does not apply to newer versions as-is. To set up a clone at that version:
+Pinned to Pollen's commit `b9f58a3` (see [`patches/POLLEN_COMMIT`](patches/POLLEN_COMMIT)). The patch applies to it cleanly (checked on a fresh checkout), and `install.sh` does the clone, checkout and patch for you. An earlier note named `215880b` (2026-09-11), which is five source files older than what we run. To do it by hand:
 
 ```bash
 git clone https://github.com/pollen-robotics/reachy_mini_conversation_app.git
 cd reachy_mini_conversation_app
-git checkout 215880b
+git checkout b9f58a3
 git apply /path/to/lola-bla/app/patches/pollen-conversation-app.patch
 ```
 

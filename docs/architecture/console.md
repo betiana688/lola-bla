@@ -142,3 +142,7 @@ sequenceDiagram
 A different account than the one in the database is refused: nothing is recorded, and the page says to remove the new device in Signal on the phone.
 
 The robot's device ID is per Signal account (2 for the live robot, 3 for the throwaway test device on the same account), so the console records the ID together with the creation time and never relies on the device name.
+
+### Open point for step 8b: the order of unlinking
+
+The unlink diagram above does `unregister` first and asks for the removal on the phone afterwards. After `unregister` the console can no longer see the device list, so it cannot notice the removal on the phone. Earlier experiments showed that a removal on the phone is visible only while the Signal API is still registered. Step 8b tests the other order first (remove on the phone, the console notices, then it cleans up) before anything is built.
