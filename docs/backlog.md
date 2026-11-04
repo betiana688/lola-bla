@@ -81,7 +81,7 @@
 - Read and record the data-retention and training policies of the two cloud services: Pollen's hosted real-time conversation proxy (it hears the child's voice) and Hugging Face Inference Providers (the messaging assistant). Story 4c items 1 and 3 depend on it.
 
 ### Console step 8b (2026-11-04)
-- Tested live on 2026-11-04 against a throwaway Signal API and a copy of the database. Link and unlink from the console worked, and the audit trail shows the sequence link_started, account_linked, unlink_started, account_unlinked. The logs do not show a second link completing, the phone-first order with Clean up, or the wrong-password refusal, so those three are still to be repeated before relying on them.
+- Tested live on 2026-11-04 against a throwaway Signal API and a copy of the database. The first run's audit trail shows link_started, account_linked, unlink_started, account_unlinked. The author then repeated the missing parts with a phone (a second link, the phone-first order with Clean up, and the wrong-password refusal) and reports that all went well. Those later runs were not inspected in the logs.
 - A link code works only once. Observed 2026-11-04: scanning the same code a second time failed with an error in Signal.
 - Idea: show on the status page when the robot's device was last seen (the device list has `last_seen_timestamp`).
 
