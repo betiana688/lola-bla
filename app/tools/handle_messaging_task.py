@@ -41,10 +41,8 @@ def _match_group(group_name: Optional[str]):
         return None
     if not group_name:
         return groups[0] if len(groups) == 1 else None
-    for g in groups:
-        if group_name.lower() in g["group_name"].lower():
-            return g
-    return None
+    chosen = messaging_agent.resolve_group(group_name, [g["group_name"] for g in groups])
+    return next((g for g in groups if g["group_name"] == chosen), None) if chosen else None
 
 
 def _has_audio(path: Path) -> bool:

@@ -137,12 +137,32 @@ def _summarize_for_agent(executor_result):
     return {"status": "error"}
 
 
+def resolve_group(requested, names):
+    """The one group name that `requested` means, or None. An exact match (ignoring case,
+    '&' and 'and') wins, so 'Test' never matches 'Another test'. A partial match counts
+    only if exactly one group contains it."""
+    if not requested:
+        return None
+    want = _norm(requested)
+    exact = [n for n in names if _norm(n) == want]
+    if len(exact) == 1:
+        return exact[0]
+    partial = [n for n in names if want and want in _norm(n)]
+    return partial[0] if len(partial) == 1 else None
+
+
 def _play_filtered(check_result, group_name=None, sender_name=None):
     """Plays messages from check_messages()'s full result, optionally filtered.
     A message is marked played only if playback really succeeded."""
     played_any = False
+    wanted = None
+    if group_name:
+        names = [g["group_name"] for g in messaging_executor.get_active_groups_list(accessed_by="messaging_agent")]
+        wanted = resolve_group(group_name, names)
+        if wanted is None:
+            return False  # unknown or ambiguous group: play nothing rather than the wrong one
     for group in check_result.get("groups", []):
-        if group_name and group_name.lower() not in group["group_name"].lower():
+        if wanted and group["group_name"] != wanted:
             continue
         for message in group.get("messages", []):
             if sender_name and sender_name.lower() not in message["sender"].lower():
