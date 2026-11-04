@@ -16,11 +16,11 @@ SALT_BYTES = 16
 KEY_BYTES = 32
 MAXMEM = 128 * 1024 * 1024  # N=2**15, r=8 needs about 32 MiB; leave headroom
 
-MIN_PASSWORD_LENGTH = 12
+MIN_PASSWORD_LENGTH = 5  # deliberately low (one person, home network); raise here to tighten
 MAX_PASSWORD_LENGTH = 128
 USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{2,31}$")
 # A tiny list of easy guesses. Deliberately not a full dictionary.
-EASY_PARTS = ("password", "passwort", "contrasena", "contraseña", "123456", "qwerty", "lolabla", "reachy")
+EASY_PARTS = ("password", "passwort", "contrasena", "contraseña", "12345", "qwerty", "lolabla", "reachy")
 
 
 def hash_password(password: str) -> str:

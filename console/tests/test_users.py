@@ -47,7 +47,12 @@ class Hashing(unittest.TestCase):
 
 class Policy(unittest.TestCase):
     def test_short_rejected(self):
-        self.assertTrue(auth.check_password("short", "betiana"))
+        self.assertTrue(auth.check_password("abcd", "betiana"))
+
+    def test_minimum_is_five(self):
+        self.assertTrue(auth.check_password("abcd", "betiana"))
+        self.assertEqual(auth.check_password("abcde", "betiana"), [])
+        self.assertTrue(auth.check_password("12345", "betiana"))
 
     def test_ok_password(self):
         self.assertEqual(auth.check_password(PW1, "betiana"), [])
@@ -120,7 +125,7 @@ class CreateUser(Base):
 
     def test_weak_password_changes_nothing(self):
         with self.assertRaises(users.UserError):
-            users.create_first_user(self.con, "betiana", "short", WHO)
+            users.create_first_user(self.con, "betiana", "abcd", WHO)
         self.assertEqual((self.count("users"), self.count("audit_log")), (0, 0))
 
     def test_no_account(self):
@@ -163,7 +168,7 @@ class Reset(Base):
     def test_weak_reset_rejected_and_changes_nothing(self):
         before = self.con.execute("SELECT password_hash FROM users").fetchone()[0]
         with self.assertRaises(users.UserError):
-            users.reset_password(self.con, "short", WHO)
+            users.reset_password(self.con, "abcd", WHO)
         self.assertEqual(self.con.execute("SELECT password_hash FROM users").fetchone()[0], before)
         self.assertEqual(self.count("audit_log"), 1)
 

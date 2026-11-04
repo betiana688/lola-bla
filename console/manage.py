@@ -13,11 +13,11 @@ import getpass
 import sqlite3
 import sys
 
-from lola_console import users
+from lola_console import auth, users
 
 
 def _ask_new_password(read_password):
-    first = read_password("New password (hidden, at least 12 characters): ")
+    first = read_password(f"New password (hidden, at least {auth.MIN_PASSWORD_LENGTH} characters): ")
     second = read_password("Type it again: ")
     if first != second:
         raise users.UserError("the two passwords do not match")
