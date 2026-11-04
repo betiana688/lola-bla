@@ -21,6 +21,6 @@ for attempt in 1 2 3; do
   if [ "$attempt" = 3 ]; then echo "Push failed 3 times. Your work is saved locally; run ./save.sh again later."; exit 1; fi
   echo "Push failed (attempt $attempt), retrying in 5 s..."; sleep 5
 done
-git log --oneline | head -2
-git status -sb | head -1
+git log -2 --oneline
+git status -sb | sed -n '1p'
 echo "local: $(git rev-parse --short HEAD) | GitHub: $(git ls-remote origin main | cut -c1-7)"
