@@ -30,6 +30,7 @@ class FakeSignal:
         self.calls = []
         self.fail_at = None
         self.not_registered_at = set()
+        self.group_list = []
 
     def accounts(self):
         if self.down or self.accounts_fail:
@@ -65,6 +66,13 @@ class FakeSignal:
             raise NotRegistered("not registered")
         if self.fail_at == "delete":
             raise SignalApiError("the Signal API answered HTTP 500")
+
+    def groups(self, number):
+        if self.down:
+            raise SignalApiError("fake: no answer")
+        if number not in self.registered:
+            raise NotRegistered("not registered")
+        return list(self.group_list)
 
 
 class LinkBase(WebBase):

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Groups - Lola-Bla console{% endblock %}
+{% block body %}
+<h1>Groups</h1>
+{% if flash %}<p class="notice" role="status">{{ flash }}</p>{% endif %}
+<p>Reachy only reads and plays messages from approved groups, and only from approved contacts inside them.</p>
+{% for g in groups %}
+<section class="group">
+  <h2>{{ g.name }}</h2>
+  <p>{{ "Active" if g.active else "Inactive: Reachy ignores it" }} &middot; {{ g.contacts }} contact{{ "" if g.contacts == 1 else "s" }} &middot; {{ g.messages }} message{{ "" if g.messages == 1 else "s" }}</p>
+  <form method="post" action="/groups/rename" class="inline">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="id" value="{{ g.id }}">
+    <input name="name" type="text" value="{{ g.name }}" maxlength="40" aria-label="Spoken name" required>
+    <button type="submit" class="secondary">Rename</button>
+  </form>
+  <form method="post" action="/groups/active">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="id" value="{{ g.id }}">
+    <input type="hidden" name="active" value="{{ 0 if g.active else 1 }}">
+    <button type="submit" class="secondary">{{ "Deactivate" if g.active else "Activate" }}</button>
+  </form>
+  <details>
+    <summary>Remove this group</summary>
+    <p>This deletes the group, its contacts ({{ g.contacts }}) and its messages ({{ g.messages }}), including their audio files. It cannot be undone. To keep everything and only stop Reachy using it, use Deactivate.</p>
+    <form method="post" action="/groups/remove">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="id" value="{{ g.id }}">
+      <label for="rm-confirm-{{ loop.index }}">Type {{ remove_word }} to confirm</label>
+      <input id="rm-confirm-{{ loop.index }}" name="confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+      <label for="rm-pw-{{ loop.index }}">Your password</label>
+      <div class="row">
+        <input id="rm-pw-{{ loop.index }}" name="password" type="password" autocomplete="current-password" required>
+        <button type="button" class="secondary" data-toggle-password="rm-pw-{{ loop.index }}" aria-pressed="false">Show</button>
+      </div>
+      <button type="submit">Remove</button>
+    </form>
+  </details>
+</section>
+{% else %}
+<p>No groups approved yet.</p>
+{% endfor %}
+<p><a href="/groups/add">Add a group</a></p>
+<p><a href="/">Back</a></p>
+{% endblock %}

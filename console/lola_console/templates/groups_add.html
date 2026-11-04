@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Add a group - Lola-Bla console{% endblock %}
+{% block body %}
+<h1>Add a group</h1>
+{% if flash %}<p class="notice" role="status">{{ flash }}</p>{% endif %}
+<p>These are the groups your Signal account is in that are not approved yet. The spoken name is what Reachy says; it starts as the group's name in Signal.</p>
+<form method="get" action="/groups/add" class="inline">
+  <input name="q" type="search" value="{{ q }}" maxlength="60" aria-label="Search groups">
+  <button type="submit" class="secondary">Search</button>
+</form>
+{% if message %}<p class="notice">{{ message }}</p>{% endif %}
+{% for g in items %}
+<section class="group">
+  <h2>{{ g.name }}</h2>
+  <p>{{ g.member_count }} members</p>
+  <form method="post" action="/groups/add" class="inline">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="internal_id" value="{{ g.internal_id }}">
+    <input name="name" type="text" value="{{ g.name }}" maxlength="40" aria-label="Spoken name" required>
+    <button type="submit">Add</button>
+  </form>
+</section>
+{% endfor %}
+<p><a href="/groups">Back to groups</a></p>
+{% endblock %}

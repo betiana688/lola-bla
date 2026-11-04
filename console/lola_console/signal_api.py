@@ -27,9 +27,16 @@ def _number_path(number):
 
 
 class SignalApi:
-    def __init__(self, base_url=None, timeout=TIMEOUT_S):
+    def __init__(self, base_url=None, timeout=TIMEOUT_S, readonly=None):
         self.base = (base_url or os.environ.get("LOLA_SIGNAL_API", DEFAULT_URL)).rstrip("/")
         self.timeout = timeout
+        # Read-only mode (LOLA_SIGNAL_READONLY=1) refuses everything except reading, so a test
+        # console can look at the real Signal API without being able to change it.
+        self.readonly = (os.environ.get("LOLA_SIGNAL_READONLY") == "1") if readonly is None else readonly
+
+    def _deny_write(self):
+        if self.readonly:
+            raise SignalApiError("this console is in read-only mode")
 
     def _call(self, method, path, payload=None):
         data = json.dumps(payload).encode("utf-8") if payload is not None else None
@@ -67,7 +74,20 @@ class SignalApi:
             raise SignalApiError("unexpected answer from the Signal API")
         return data
 
+    def groups(self, number):
+        """The groups this account is in, reduced to what the console needs: internal_id, name,
+        member_count and blocked. Member IDs are never passed on."""
+        data = self._json("/v1/groups/" + _number_path(number))
+        ok = isinstance(data, list) and all(
+            isinstance(g, dict) and isinstance(g.get("internal_id"), str) and isinstance(g.get("name"), str)
+            and isinstance(g.get("members", []), list) for g in data)
+        if not ok:
+            raise SignalApiError("unexpected answer from the Signal API")
+        return [{"internal_id": g["internal_id"], "name": g["name"], "member_count": len(g.get("members", [])),
+                 "blocked": bool(g.get("blocked", False))} for g in data]
+
     def qr_png(self, device_name):
+        self._deny_write()
         body = self._call("GET", "/v1/qrcodelink?" + urllib.parse.urlencode({"device_name": device_name}))
         if not body.startswith(PNG_SIGNATURE):
             raise SignalApiError("the Signal API did not return a QR code image")
@@ -76,10 +96,12 @@ class SignalApi:
     def unregister(self, number):
         """Stop this app using the account. delete_account is always false: there is no way to ask
         this client to delete the Signal account itself."""
+        self._deny_write()
         self._call("POST", "/v1/unregister/" + _number_path(number),
                    {"delete_account": False, "delete_local_data": False})
 
     def delete_local_data(self, number):
         """Delete this app's local Signal data. ignore_registered is always false, so the API
         refuses while the number is still registered."""
+        self._deny_write()
         self._call("DELETE", "/v1/devices/" + _number_path(number) + "/local-data", {"ignore_registered": False})

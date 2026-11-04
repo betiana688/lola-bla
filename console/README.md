@@ -42,3 +42,11 @@ Signed in, open "Signal account" on the home page. It shows whether the robot is
 ## Step 8b: unlinking
 
 On the Signal page the button is **Unlink**, **Clean up** or **Finish unlinking**, depending on the state. It asks for the word UNLINK and your password. It marks the robot unlinked first, unregisters the number (it can never delete the Signal account itself), deletes the app's local Signal data, and reminds you to remove `reachy-mini` from Linked devices on your phone. If a step fails, the robot stays unlinked and the page offers to finish the rest.
+
+## Step 9: groups
+
+The Groups page lists the approved groups and lets you add one from the groups your Signal account is in, rename it, deactivate or activate it, or remove it. Removing deletes the group, its contacts, its messages and their audio files, and needs the word REMOVE and your password.
+
+| Setting | Purpose |
+|---|---|
+| `LOLA_SIGNAL_READONLY` | Set to `1` to make the console's Signal client refuse everything except reading. Use it with `LOLA_DB` pointing at a copy of the database to try the console against the real Signal API without being able to change it |

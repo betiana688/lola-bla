@@ -81,7 +81,7 @@
 - Read and record the data-retention and training policies of the two cloud services: Pollen's hosted real-time conversation proxy (it hears the child's voice) and Hugging Face Inference Providers (the messaging assistant). Story 4c items 1 and 3 depend on it.
 
 ### Console step 8b (2026-11-04)
-- Tested live on 2026-11-04 against a throwaway Signal API and a copy of the database, in both orders (console first; phone first, then Clean up). It worked as expected, by the author's report. The exact wording the status page showed after a removal on the phone was not recorded.
+- Tested live on 2026-11-04 against a throwaway Signal API and a copy of the database. Link and unlink from the console worked, and the audit trail shows the sequence link_started, account_linked, unlink_started, account_unlinked. The logs do not show a second link completing, the phone-first order with Clean up, or the wrong-password refusal, so those three are still to be repeated before relying on them.
 - A link code works only once. Observed 2026-11-04: scanning the same code a second time failed with an error in Signal.
 - Idea: show on the status page when the robot's device was last seen (the device list has `last_seen_timestamp`).
 
@@ -90,3 +90,8 @@
 - Messaging assistant: use the local rules only (no cloud call), or pin one provider and read its policy.
 - Review the README's privacy wording once decided, so it says exactly what leaves the robot.
 - Decision (2026-11-04): documented and accepted for now. Revisit before any public release or wider use.
+
+### Console step 9 (2026-11-04)
+- Step 10 (contacts): the real group list has 89 member entries, 65 of them Signal UUIDs and 24 phone numbers. Names are known only for contacts in the contact list, and only a few of those carry a UUID, so most members cannot be named automatically. To be designed next.
+- Not yet tested live: the Add flow against the real group list (read-only look done), and that the robot picks up group changes on its next check.
+- Possible race: a message arriving while its group is being removed.

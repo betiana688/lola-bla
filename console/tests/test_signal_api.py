@@ -92,6 +92,32 @@ class ClientTests(unittest.TestCase):
         self.assertNotIsInstance(e.exception, NotRegistered)
         self.assertNotIn(NUMBER, str(e.exception))
 
+    def test_groups_are_reduced_to_what_the_console_needs(self):
+        raw = [{"id": "group.xyz", "internal_id": "abc", "name": "Family", "members": ["+49111", "uuid-1", "uuid-2"],
+                "blocked": False, "admins": [], "description": "d"},
+               {"id": "group.pqr", "internal_id": "def", "name": "Old", "members": [], "blocked": True}]
+        self.answer("GET", f"/v1/groups/{NUMBER}", body=raw)
+        self.assertEqual(self.api.groups(NUMBER), [
+            {"internal_id": "abc", "name": "Family", "member_count": 3, "blocked": False},
+            {"internal_id": "def", "name": "Old", "member_count": 0, "blocked": True}])
+
+    def test_groups_with_an_unexpected_shape_or_an_unregistered_number(self):
+        self.answer("GET", f"/v1/groups/{NUMBER}", body=[{"name": "no id"}])
+        with self.assertRaises(SignalApiError):
+            self.api.groups(NUMBER)
+        self.answer("GET", f"/v1/groups/{NUMBER}", status=400, body=b'{"error":"User is not registered."}')
+        with self.assertRaises(NotRegistered):
+            self.api.groups(NUMBER)
+
+    def test_read_only_mode_never_writes(self):
+        ro = SignalApi(base_url=f"http://127.0.0.1:{self.server.server_address[1]}", timeout=5, readonly=True)
+        for call in (lambda: ro.unregister(NUMBER), lambda: ro.delete_local_data(NUMBER), lambda: ro.qr_png("x")):
+            with self.assertRaises(SignalApiError):
+                call()
+        self.assertEqual(Handler.seen, [])
+        self.answer("GET", "/v1/accounts", body=[])
+        self.assertEqual(ro.accounts(), [])
+
     def test_qr(self):
         self.answer("GET", "/v1/qrcodelink?device_name=reachy-mini", body=PNG, ctype="image/png")
         self.assertEqual(self.api.qr_png("reachy-mini"), PNG)

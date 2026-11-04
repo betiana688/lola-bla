@@ -38,6 +38,8 @@ sqlite3 ~/lola-bla-agents/reachy_mini_conversation_app/local_data/lola.db ".tabl
 
 ## Managing groups
 
+The console's Groups page does this now (add from Signal, rename, deactivate or activate, remove). The commands below still work.
+
 **Register an allow-listed group:**
 ```bash
 sqlite3 ~/lola-bla-agents/reachy_mini_conversation_app/local_data/lola.db "INSERT INTO groups (id, name, signal_group_id, is_active) VALUES ('grp-1', 'Lola, Michi & Bet', 'SIGNAL_INTERNAL_GROUP_ID', 1);"

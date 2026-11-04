@@ -159,3 +159,20 @@ The order is chosen so that a failure never leaves Reachy using a dead account:
 If a step fails, the console stops, says which one (activity entry `unlink_failed`) and leaves the robot marked unlinked. The status page then offers "Finish unlinking" until an attempt succeeds.
 
 It acts only on the number recorded in the database, and refuses if the Signal API lists a different one. It refuses while a link is in progress. Once the number is unregistered the console cannot see the device list, so it cannot check that the device was removed on the phone, and says so.
+
+### Groups (step 9)
+
+`/groups` lists the approved groups with their spoken name, whether they are active, and how many contacts and messages each has. Every action is a POST with the CSRF token and the Origin check.
+
+| Action | What it does |
+|---|---|
+| Add a group | `/groups/add` lists the groups the Signal account is in that are not approved yet (name and member count only, never member IDs; blocked groups are left out), with a search box. The console asks Signal again before saving, so the form cannot add a group the account is not in. The spoken name starts as the Signal name |
+| Rename | Changes the spoken name |
+| Deactivate, Activate | An inactive group is ignored by sync, playback and sending. Nothing is deleted |
+| Remove | Needs the word `REMOVE` and the password, and says first how many contacts and messages will go. Deletes the group, its contacts, its messages and their audio files. Audio files are deleted only if they are inside the app's audio folder (the `audio` folder next to the database); anything outside it, and any symbolic link, is left alone and counted |
+
+Spoken names are 1 to 40 characters and must differ from every other group's name when case, punctuation and "&" versus "and" are ignored, because the robot picks a group by its name and two that sound the same would make it play nothing.
+
+The audit log records `group_added`, `group_renamed`, `group_activated`, `group_deactivated` and `group_removed` with the group's internal ID and never its name. The activity log records only counts.
+
+Known limits: removing a group while the robot holds an unsent recording for it makes that send fail (the recording is kept, as for any failed send), and a message that arrives during a removal may fail to be saved and show up as an error in the activity log. That the robot picks up changes on its next check, with no restart, is expected from how it reads the database and still to be confirmed on the robot.

@@ -4,7 +4,7 @@
 |---|---|
 | 1 — Reading messages | ✅ Complete |
 | 2 — Replying to messages | ✅ Complete |
-| 3 — Configuring the app | 🔨 In progress: sign-in, password, Signal linking and unlinking are built; groups, contacts and logs are next |
+| 3 — Configuring the app | 🔨 In progress: sign-in, password, Signal linking and unlinking, and groups are built; contacts and logs are next |
 | 4 — Performance, security, privacy | ✅ Built and tested. Story 4c is only partly verified: the cloud services' data policies were read on 2026-11-04, and nothing published could be found for the live conversation (see the [cloud privacy check](../reference/cloud-privacy-check.md)) |
 
 ## Story 1: Reading messages

@@ -23,7 +23,7 @@ from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-from . import auth, link, signal_api, users
+from . import auth, groupadmin, link, signal_api, users
 from .sessions import SESSION_SECONDS, Signer, load_or_create_secret
 
 BASE = Path(__file__).parent
@@ -511,7 +511,7 @@ async def link_cancel(request):
 UNLINK_WORD = "UNLINK"
 
 
-async def _reauthenticate(con, user, password, who):
+async def _reauthenticate(con, user, password, who, what="unlink"):
     """Ask for the password again before something important. A wrong password counts toward the
     same lockout as sign-in. Returns None if the password is right, otherwise a message to show."""
     row = con.execute("SELECT password_hash, failed_attempts, locked_until FROM users WHERE id = ?",
@@ -522,7 +522,7 @@ async def _reauthenticate(con, user, password, who):
     if row[2] and row[2] > now:
         with con:
             _audit(con, who, user["id"], "blocked")
-            _activity(con, "unlink_blocked", "An unlink was refused because sign-in is locked")
+            _activity(con, f"{what}_blocked", f"A {what} was refused because sign-in is locked")
         return "Too many wrong passwords. This is locked for a while."
     ok = len(password) <= MAX_FIELD and await run_in_threadpool(auth.verify_password, password, row[0])
     if ok:
@@ -538,12 +538,12 @@ async def _reauthenticate(con, user, password, who):
                         (failed, f"+{LOCK_MINUTES} minutes", user["id"]))
         else:
             con.execute("UPDATE users SET failed_attempts = ? WHERE id = ?", (failed, user["id"]))
-        _audit(con, who, user["id"], "unlink_password_failed")
+        _audit(con, who, user["id"], f"{what}_password_failed")
         if locked:
             _audit(con, who, user["id"], "locked")
             _activity(con, "login_locked", f"Sign-in locked for {LOCK_MINUTES} minutes after {MAX_FAILED} wrong passwords")
         else:
-            _activity(con, "unlink_password_failed", f"Wrong password when trying to unlink ({failed} in a row)")
+            _activity(con, f"{what}_password_failed", f"Wrong password when trying to {what} ({failed} in a row)")
     return f"Too many wrong passwords. Locked for {LOCK_MINUTES} minutes." if locked else "The password is wrong."
 
 
@@ -587,6 +587,126 @@ async def unlink_post(request):
     return back(text)
 
 
+GROUP_REMOVE_WORD = "REMOVE"
+
+
+def _with_con(db_path, fn, *args):
+    con = users.connect(db_path)
+    try:
+        return fn(con, *args)
+    finally:
+        con.close()
+
+
+def _group_redirect(app, message, target="/groups"):
+    app.state.flash = message
+    return RedirectResponse(target, status_code=303)
+
+
+async def _group_post(request):
+    """The checks every group action starts with: origin, signed in, CSRF token."""
+    if not _origin_ok(request):
+        return None, None, _forbidden()
+    user = _current_user(request)
+    if not user:
+        return None, None, RedirectResponse("/login", status_code=303)
+    form = await request.form()
+    if not _csrf_ok(user, form):
+        return None, None, _forbidden()
+    return user, form, None
+
+
+async def groups_get(request):
+    user = _current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    app = request.app
+    items = await run_in_threadpool(_with_con, app.state.db_path, groupadmin.list_groups)
+    flash, app.state.flash = app.state.flash, None
+    return templates.TemplateResponse(request, "groups.html", {
+        "groups": items, "csrf": user["csrf"], "flash": flash, "remove_word": GROUP_REMOVE_WORD})
+
+
+async def groups_add_get(request):
+    user = _current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    app = request.app
+    query = str(request.query_params.get("q", ""))[:60]
+    result = await run_in_threadpool(_with_con, app.state.db_path, groupadmin.available_from_signal,
+                                     app.state.signal, query)
+    flash, app.state.flash = app.state.flash, None
+    return templates.TemplateResponse(request, "groups_add.html", {
+        "items": result["items"], "message": result["message"], "q": query,
+        "csrf": user["csrf"], "flash": flash})
+
+
+async def groups_add_post(request):
+    user, form, error = await _group_post(request)
+    if error:
+        return error
+    app = request.app
+    try:
+        await run_in_threadpool(_with_con, app.state.db_path, groupadmin.add_group, app.state.signal,
+                                str(form.get("internal_id", ""))[:300], str(form.get("name", ""))[:200],
+                                f"console:{user['username']}")
+    except groupadmin.GroupError as e:
+        return _group_redirect(app, str(e), "/groups/add")
+    return _group_redirect(app, "Group added.")
+
+
+async def groups_rename_post(request):
+    user, form, error = await _group_post(request)
+    if error:
+        return error
+    app = request.app
+    try:
+        await run_in_threadpool(_with_con, app.state.db_path, groupadmin.rename_group,
+                                str(form.get("id", ""))[:60], str(form.get("name", ""))[:200],
+                                f"console:{user['username']}")
+    except groupadmin.GroupError as e:
+        return _group_redirect(app, str(e))
+    return _group_redirect(app, "Name saved.")
+
+
+async def groups_active_post(request):
+    user, form, error = await _group_post(request)
+    if error:
+        return error
+    app = request.app
+    active = str(form.get("active", "")) == "1"
+    try:
+        await run_in_threadpool(_with_con, app.state.db_path, groupadmin.set_active,
+                                str(form.get("id", ""))[:60], active, f"console:{user['username']}")
+    except groupadmin.GroupError as e:
+        return _group_redirect(app, str(e))
+    return _group_redirect(app, "Group is active again." if active else "Group deactivated. Nothing was deleted.")
+
+
+async def groups_remove_post(request):
+    user, form, error = await _group_post(request)
+    if error:
+        return error
+    app = request.app
+    who = f"console:{user['username']}"
+    if str(form.get("confirm", "")).strip() != GROUP_REMOVE_WORD:
+        return _group_redirect(app, f"Nothing was removed. Type {GROUP_REMOVE_WORD} in capital letters to confirm.")
+    con = _connect(request)
+    try:
+        problem = await _reauthenticate(con, user, str(form.get("password", "")), who, what="remove")
+    finally:
+        con.close()
+    if problem:
+        return _group_redirect(app, problem)
+    audio_dir = Path(app.state.db_path).parent / "audio"
+    try:
+        result = await run_in_threadpool(_with_con, app.state.db_path, groupadmin.remove_group,
+                                         str(form.get("id", ""))[:60], who, audio_dir)
+    except groupadmin.GroupError as e:
+        return _group_redirect(app, str(e))
+    return _group_redirect(app, groupadmin.removal_summary(result))
+
+
 def create_app(db_path=None, secret=None, allowed_hosts=None, signal_client=None, device_name=None):
     middleware = [Middleware(SecurityHeaders)]
     if allowed_hosts:
@@ -604,6 +724,12 @@ def create_app(db_path=None, secret=None, allowed_hosts=None, signal_client=None
         Route("/link/check", link_check, methods=["POST"]),
         Route("/link/cancel", link_cancel, methods=["POST"]),
         Route("/unlink", unlink_post, methods=["POST"]),
+        Route("/groups", groups_get, methods=["GET"]),
+        Route("/groups/add", groups_add_get, methods=["GET"]),
+        Route("/groups/add", groups_add_post, methods=["POST"]),
+        Route("/groups/rename", groups_rename_post, methods=["POST"]),
+        Route("/groups/active", groups_active_post, methods=["POST"]),
+        Route("/groups/remove", groups_remove_post, methods=["POST"]),
         Mount("/static", StaticFiles(directory=str(BASE / "static")), name="static"),
     ]
     app = Starlette(routes=routes, middleware=middleware)
