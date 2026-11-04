@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Signal account - Lola-Bla console{% endblock %}
+{% block body %}
+<h1>Signal account</h1>
+{% if flash %}<p class="notice" role="status">{{ flash }}</p>{% endif %}
+<dl>
+  <dt>Status</dt><dd>{{ label }}</dd>
+  {% if status.number_masked %}<dt>Number</dt><dd>{{ status.number_masked }}</dd>{% endif %}
+  {% if status.device_id %}<dt>Robot device</dt><dd>{{ status.device_id }}</dd>{% endif %}
+  {% if status.linked_at %}<dt>Linked since (UTC)</dt><dd>{{ status.linked_at }}</dd>{% endif %}
+</dl>
+<p>{{ status.message }}</p>
+{% if linking %}
+<div id="link-box" data-csrf="{{ csrf }}">
+  <p>On your phone open Signal, then Settings, then Linked devices, then Link new device, and scan this code. It stays here for up to {{ minutes_left }} more minutes. Only scan it with your own phone.</p>
+  <img class="qr" src="/link/qr.png" alt="Signal link code" width="256" height="256">
+  <p class="muted">Waiting for the scan. This page updates by itself.</p>
+  <form method="post" action="/link/cancel">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button type="submit" class="secondary">Cancel</button>
+  </form>
+</div>
+<script src="/static/link.js" defer></script>
+{% elif status.can_link %}
+<form method="post" action="/link/start">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <button type="submit">Start linking</button>
+</form>
+{% endif %}
+<p class="muted">Unlinking comes in the next step.</p>
+<p><a href="/">Back</a></p>
+{% endblock %}

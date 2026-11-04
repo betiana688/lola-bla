@@ -36,16 +36,16 @@ As Betiana, I want to configure the app, because I want to make sure who can int
 
 ### Signing in
 
-1. One console user per Signal account (1:1 for now), signing in with credentials.
-2. The first user is created on the Pi itself, not through an open web page.
-3. The user can change their password, entering the current one first.
-4. Repeated failed sign-ins temporarily lock the login.
-5. Passwords are never stored or shown in readable form.
+1. One console user per Signal account (1:1 for now), signing in with credentials over HTTPS (a self-signed certificate: the browser warns once).
+2. The first user is created on the Pi itself, not through an open web page, and can be created before the Signal account is linked (fresh install).
+3. The user can change their password, entering the current one first. Changing it ends all other sign-ins. A forgotten password is reset with a command on the Pi; a one-time code through Signal comes later.
+4. Repeated failed sign-ins lock the login: 5 wrong passwords in a row lock it for 15 minutes. Wrong current passwords on the change-password page count too. Resetting the password on the Pi clears the lock.
+5. Passwords are never stored or shown in readable form. The minimum length is 5 characters, chosen deliberately; the lockout carries the protection. Password fields have a Show/Hide button.
 
 ### Linking the Signal account
 
-6. The user can link the app's Signal device to their account from the console (scanning a QR code with their phone) and can see whether it's linked.
-7. The user can unlink it from the console. Once unlinked, from the console or from the phone, the app can neither read nor send, and Reachy says so plainly.
+6. The user can link the robot's Signal device (named `reachy-mini`) to their account from the console by scanning a QR code with their phone, and can see whether it is linked. Linking is offered only when the Signal API has no account registered. If the scan is a different Signal account than the one the groups belong to, nothing is recorded and the page says so.
+7. The user can unlink from the console. Unlinking is a guided action: it needs a confirmation word and the password, stops the app using the account and deletes the app's local Signal data (never the Signal account itself), then tells the user to remove the device in Signal on their phone, because only the phone can revoke it, and notices when that has been done. Once unlinked, from the console or from the phone, the app can neither read nor send, and Reachy says so plainly.
 8. Nothing outside the Pi can reach the Signal API, and the console acts only through the linked device.
 
 ### Managing approvals

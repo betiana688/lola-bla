@@ -55,16 +55,17 @@ def create_first_user(con, username, password, who) -> str:
         raise UserError("a user already exists (one user per Signal account for now); "
                         "use reset-password to change its password")
     accounts = con.execute("SELECT id, user_id FROM accounts").fetchall()
-    if len(accounts) != 1:
-        raise UserError(f"expected exactly one Signal account in the database, found {len(accounts)}")
-    if accounts[0][1] is not None:
+    if len(accounts) > 1:
+        raise UserError(f"expected at most one Signal account in the database, found {len(accounts)}")
+    if accounts and accounts[0][1] is not None:
         raise UserError("the Signal account already has a user")
     user_id = str(uuid.uuid4())
     pw_hash = auth.hash_password(password)
     with con:
         con.execute(f"INSERT INTO users (id, username, password_hash, password_changed_at) "
                     f"VALUES (?, ?, ?, {NOW})", (user_id, username, pw_hash))
-        con.execute("UPDATE accounts SET user_id = ? WHERE id = ?", (user_id, accounts[0][0]))
+        if accounts:
+            con.execute("UPDATE accounts SET user_id = ? WHERE id = ?", (user_id, accounts[0][0]))
         _audit(con, who, user_id, "create_user")
     return user_id
 

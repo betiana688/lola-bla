@@ -28,3 +28,13 @@ Sign-in rules: 5 wrong attempts lock sign-in for 15 minutes, and after a lock on
 ## Step 7: change password
 
 Signed in, open "Change password" on the home page. It asks for the current password, then the new one twice. A wrong current password counts toward the same lockout as sign-in. Changing the password ends every other sign-in, and this browser gets a fresh session.
+
+## Step 8a: the Signal page
+
+Signed in, open "Signal account" on the home page. It shows whether the robot is linked, reading the Signal API's own answers, with the number masked. When the Signal API has no account, "Start linking" shows a QR code that only you can see; scan it in Signal (Settings, Linked devices). The page notices the scan, records the number, device ID and creation time, and sets the status to linked. Unlinking comes in step 8b.
+
+| Setting | Purpose |
+|---|---|
+| `LOLA_SIGNAL_API` | Where the Signal API listens (default `http://localhost:8080`) |
+| `LOLA_DEVICE_NAME` | The device name used when linking (default `reachy-mini`; tests use `console-test`) |
+| `LOLA_DB` | Use another database (tests and trials use a copy, never the real one) |

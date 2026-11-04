@@ -2,9 +2,11 @@
 State-changing requests are POSTs with a CSRF token and an Origin check. Sessions are signed
 cookies that stop working when the password changes. The typed username is never stored."""
 
+import asyncio
 import hmac
 import logging
 import math
+import os
 import secrets
 import time
 import uuid
@@ -16,12 +18,12 @@ from starlette.concurrency import run_in_threadpool
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from starlette.responses import PlainTextResponse, RedirectResponse
+from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-from . import auth, users
+from . import auth, link, signal_api, users
 from .sessions import SESSION_SECONDS, Signer, load_or_create_secret
 
 BASE = Path(__file__).parent
@@ -36,7 +38,7 @@ LOGIN_COOKIE_SECONDS = 600
 MAX_FIELD = 1024  # longest username or password we will even look at
 
 HEADERS = {
-    "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; "
+    "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; "
                                "form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff",
@@ -364,7 +366,138 @@ async def password_post(request):
         con.close()
 
 
-def create_app(db_path=None, secret=None, allowed_hosts=None):
+LABELS = {"linked": "Linked", "not_linked": "Not linked", "removed": "Removed from Signal",
+          "different": "A different account", "unknown": "Cannot tell"}
+
+
+def _csrf_ok(user, form) -> bool:
+    return hmac.compare_digest(str(form.get("csrf", "")).encode(), user["csrf"].encode())
+
+
+def _link_active(app):
+    """The link in progress, or None. A link that ran out of time is dropped here."""
+    state = app.state.link
+    if state and time.time() - state["started"] > link.LINK_WINDOW_S:
+        app.state.link = None
+        app.state.flash = "The link code expired. Start again if you still want to link."
+        return None
+    return state
+
+
+def _read_status_sync(db_path, api, device_name):
+    con = users.connect(db_path)
+    try:
+        return link.read_status(con, api, device_name)
+    finally:
+        con.close()
+
+
+def _finish_link_sync(db_path, api, user, device_name):
+    con = users.connect(db_path)
+    try:
+        return link.finish_link(con, api, user["id"], f"console:{user['username']}", device_name)
+    finally:
+        con.close()
+
+
+async def signal_get(request):
+    user = _current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    app = request.app
+    status = await run_in_threadpool(_read_status_sync, app.state.db_path, app.state.signal, app.state.device_name)
+    state = _link_active(app)
+    flash, app.state.flash = app.state.flash, None
+    minutes_left = max(1, math.ceil((link.LINK_WINDOW_S - (time.time() - state["started"])) / 60)) if state else 0
+    return templates.TemplateResponse(request, "signal.html", {
+        "status": status, "label": LABELS[status["state"]], "linking": bool(state),
+        "csrf": user["csrf"], "flash": flash, "minutes_left": minutes_left})
+
+
+async def link_start(request):
+    if not _origin_ok(request):
+        return _forbidden()
+    user = _current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    form = await request.form()
+    if not _csrf_ok(user, form):
+        return _forbidden()
+    app = request.app
+    if _link_active(app):
+        return RedirectResponse("/signal", status_code=303)
+    status = await run_in_threadpool(_read_status_sync, app.state.db_path, app.state.signal, app.state.device_name)
+    if not status["can_link"]:
+        app.state.flash = "Linking is not possible right now: " + status["message"]
+        return RedirectResponse("/signal", status_code=303)
+    try:
+        png = await run_in_threadpool(app.state.signal.qr_png, app.state.device_name)
+    except signal_api.SignalApiError as e:
+        app.state.flash = f"Could not get a link code from the Signal API ({e}). Nothing was changed."
+        return RedirectResponse("/signal", status_code=303)
+    app.state.link = {"png": png, "started": time.time()}
+    con = _connect(request)
+    try:
+        with con:
+            link.audit(con, f"console:{user['username']}", "accounts", None, "link_started")
+    finally:
+        con.close()
+    return RedirectResponse("/signal", status_code=303)
+
+
+async def link_qr(request):
+    user = _current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    state = _link_active(request.app)
+    if not state:
+        return PlainTextResponse("Not found", status_code=404)
+    return Response(state["png"], media_type="image/png")
+
+
+async def link_check(request):
+    app = request.app
+    if not _origin_ok(request):
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    user = _current_user(request)
+    if not user:
+        return JSONResponse({"error": "signed out"}, status_code=401)
+    form = await request.form()
+    if not _csrf_ok(user, form):
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    async with app.state.link_lock:
+        if not _link_active(app):
+            return JSONResponse({"done": True, "expired": True})
+        outcome, text = await run_in_threadpool(
+            _finish_link_sync, app.state.db_path, app.state.signal, user, app.state.device_name)
+        if outcome == "waiting":
+            return JSONResponse({"done": False})
+        app.state.link = None
+        app.state.flash = "Linked. The robot's Signal device is set up." if outcome == "linked" else text
+        return JSONResponse({"done": True, "ok": outcome == "linked"})
+
+
+async def link_cancel(request):
+    if not _origin_ok(request):
+        return _forbidden()
+    user = _current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    form = await request.form()
+    if not _csrf_ok(user, form):
+        return _forbidden()
+    if request.app.state.link:
+        request.app.state.link = None
+        con = _connect(request)
+        try:
+            with con:
+                link.audit(con, f"console:{user['username']}", "accounts", None, "link_cancelled")
+        finally:
+            con.close()
+    return RedirectResponse("/signal", status_code=303)
+
+
+def create_app(db_path=None, secret=None, allowed_hosts=None, signal_client=None, device_name=None):
     middleware = [Middleware(SecurityHeaders)]
     if allowed_hosts:
         middleware.insert(0, Middleware(TrustedHostMiddleware, allowed_hosts=list(allowed_hosts)))
@@ -375,9 +508,19 @@ def create_app(db_path=None, secret=None, allowed_hosts=None):
         Route("/logout", logout, methods=["POST"]),
         Route("/password", password_get, methods=["GET"]),
         Route("/password", password_post, methods=["POST"]),
+        Route("/signal", signal_get, methods=["GET"]),
+        Route("/link/start", link_start, methods=["POST"]),
+        Route("/link/qr.png", link_qr, methods=["GET"]),
+        Route("/link/check", link_check, methods=["POST"]),
+        Route("/link/cancel", link_cancel, methods=["POST"]),
         Mount("/static", StaticFiles(directory=str(BASE / "static")), name="static"),
     ]
     app = Starlette(routes=routes, middleware=middleware)
     app.state.db_path = Path(db_path) if db_path else users.db_path()
     app.state.signer = Signer(secret if secret is not None else load_or_create_secret())
+    app.state.signal = signal_client if signal_client is not None else signal_api.SignalApi()
+    app.state.device_name = device_name or os.environ.get("LOLA_DEVICE_NAME") or link.DEVICE_NAME
+    app.state.link = None
+    app.state.flash = None
+    app.state.link_lock = asyncio.Lock()
     return app

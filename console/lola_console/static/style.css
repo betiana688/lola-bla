@@ -13,3 +13,4 @@ button.secondary { background: transparent; color: inherit; border: 1px solid Gr
 dl { display: grid; grid-template-columns: 1fr auto; gap: 0.4rem 1rem; }
 dt { font-weight: 600; }
 dd { margin: 0; }
+.qr { image-rendering: pixelated; background: #fff; padding: 0.5rem; border-radius: 0.4rem; }

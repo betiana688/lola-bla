@@ -67,3 +67,8 @@
 ### Security review: known and accepted for now (2026-11-04)
 - The Pi's SSH password is still the documented default. Revisit before publishing.
 - The console minimum password is 5 characters, by choice. The sign-in lockout (5 wrong tries, 15 minutes) is the protection.
+
+### Console step 8 (2026-11-04)
+- Adopt an existing Signal account: if the Signal API already has an account that the database does not know, the Signal page shows "A different account" and offers nothing. It needs the clean-up flow (step 8b) or an "adopt" button.
+- Unknown until tested on the throwaway instance: how long a QR code stays valid, and whether asking for a second code leaves the first one waiting.
+- The link in progress and the one-time messages live in memory, so restarting the console cancels a link in progress.

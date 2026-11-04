@@ -54,7 +54,11 @@ def main(argv=None, read_password=getpass.getpass, read_line=input, out=print) -
                 username = read_line("Username (3-32 characters: a-z, 0-9, dot, dash, underscore): ").strip().lower()
                 password = _ask_new_password(read_password)
                 users.create_first_user(con, username, password, users.actor())
-                out(f"Created user '{username}' and linked it to the Signal account.")
+                info = users.status(con)
+                if info["accounts_with_user"]:
+                    out(f"Created user '{username}' and linked it to the Signal account.")
+                else:
+                    out(f"Created user '{username}'. Next: sign in to the console and link the Signal account on the Signal page.")
             else:
                 password = _ask_new_password(read_password)
                 username = users.reset_password(con, password, users.actor())

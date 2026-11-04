@@ -128,11 +128,11 @@ class CreateUser(Base):
             users.create_first_user(self.con, "betiana", "abcd", WHO)
         self.assertEqual((self.count("users"), self.count("audit_log")), (0, 0))
 
-    def test_no_account(self):
+    def test_works_before_the_account_exists(self):
         self.con.execute("DELETE FROM accounts")
         self.con.commit()
-        with self.assertRaises(users.UserError):
-            users.create_first_user(self.con, "betiana", PW1, WHO)
+        users.create_first_user(self.con, "betiana", PW1, WHO)
+        self.assertEqual((self.count("users"), self.count("accounts")), (1, 0))
 
     def test_two_accounts(self):
         self.con.execute("INSERT INTO accounts (id, signal_number, status) VALUES ('acc2', 'other', 'linked')")
@@ -208,6 +208,13 @@ class Cli(Base):
         self.assertEqual(rc, 0)
         self.assertIn("Created user 'betiana'", out)
         self.assertEqual(self.count("users"), 1)
+
+    def test_create_before_the_account_exists(self):
+        self.con.execute("DELETE FROM accounts")
+        self.con.commit()
+        rc, out = self.run_cli(["create-user"], lines=["betiana"], passwords=[PW1, PW1])
+        self.assertEqual(rc, 0)
+        self.assertIn("link the Signal account", out)
 
     def test_mismatch(self):
         rc, out = self.run_cli(["create-user"], lines=["betiana"], passwords=[PW1, PW2])
