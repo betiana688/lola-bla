@@ -40,7 +40,7 @@ Reflects the currently running system. An earlier, fully-local prototype (using 
 
 | Component | Detail |
 |---|---|
-| `signal-cli-rest-api` (`bbernhard/signal-cli-rest-api`) | Docker, `latest` tag — **not pinned to a specific version** |
+| `signal-cli-rest-api` (`bbernhard/signal-cli-rest-api`) | Docker. On this Pi it runs as the local tag `signal-cli-rest-api-local:0.100` (version 0.100); `app/install.sh` does not set it up yet |
 | SQLite | System package |
 | `ffmpeg` | System package — audio format conversion |
 | `sox` | System package — start/stop-on-silence recording cues and silence detection |

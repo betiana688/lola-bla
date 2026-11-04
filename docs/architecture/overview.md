@@ -7,7 +7,7 @@
 Two parts run on the Reachy Mini (Raspberry Pi):
 
 - **Conversation app**: built on Pollen's conversation app. A cloud conversational agent talks live with Betiana or Lola; messaging work happens locally through tools. See [conversation-app.md](conversation-app.md).
-- **Config console**: separate process and port, LAN only. Betiana links Signal, manages groups and reads logs. See [console.md](console.md).
+- **Config console**: separate process, served over HTTPS on port 9443 and protected by a password. Betiana links Signal, manages groups and reads logs. See [console.md](console.md).
 
 Both share one SQLite database, `lola.db`. See [data-model.md](data-model.md).
 
@@ -17,9 +17,9 @@ Both share one SQLite database, `lola.db`. See [data-model.md](data-model.md).
 | Live conversation | Cloud conversational agent: Pollen's conversation app, Hugging Face realtime backend; profile in [`profiles/lola`](../../profiles/lola/profile.md) |
 | Messaging decisions | Messaging Agent, one-shot LLM call (`meta-llama/Llama-3.3-70B-Instruct` via Hugging Face Inference API) |
 | Signal | `signal-cli-rest-api` in Docker, port 8080, listens on the Pi only |
-| Audio | `arecord` / `aplay` on the shared ALSA device (dsnoop) |
+| Audio | `sox` (recording, stops after about 5 s of silence) and `aplay` on the shared ALSA device (dsnoop) |
 | Data | `lola.db` (SQLite, owner-only file permissions) |
-| Console | FastAPI, LAN only, one user per account |
+| Console | Starlette and uvicorn over HTTPS (port 9443), password sign-in, one user per account |
 
 ## Messaging layers
 
@@ -101,7 +101,7 @@ flowchart LR
     end
     subgraph L5["messaging_executor.py + hardware"]
       direction TB
-      e1[SQLite, signal-cli-rest-api,<br/>arecord/aplay]
+      e1[SQLite, signal-cli-rest-api,<br/>sox/aplay]
     end
     a1 --> b1
     b1 --> c1
@@ -130,7 +130,7 @@ sequenceDiagram
   CA->>Tool: call handle_messaging_task(...)
   Tool->>RL: stream_manager._mic_muted = True
   Note over RL: record_loop keeps running,<br/>but stops forwarding audio to the cloud
-  Tool->>Dev: arecord (same shared device, independent reader)
+  Tool->>Dev: sox, with start and done beeps (same shared device, independent reader)
   Dev-->>Tool: Lola's recorded reply (local file only)
   Tool->>Child: aplay - local playback for review
   Tool->>RL: stream_manager._mic_muted = False

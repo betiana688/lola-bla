@@ -5,7 +5,7 @@
 | 1 — Reading messages | ✅ Complete |
 | 2 — Replying to messages | ✅ Complete |
 | 3 — Configuring the app | 🔨 In progress: sign-in, password and Signal linking are built; unlink, groups, contacts and logs are next |
-| 4 — Performance, security, privacy | ✅ Complete and verified |
+| 4 — Performance, security, privacy | ✅ Built and tested. One check is still open: the cloud providers' data-retention and training policies (Story 4c, items 1 and 3) have not been checked yet |
 
 ## Story 1: Reading messages
 
@@ -91,3 +91,5 @@ As Betiana, I want confidence that sensitive data isn't exposed to anyone beyond
 3. Before relying on any provider, its actual data-retention/training policy is checked and confirmed, not assumed.
 4. An audit trail records access to where sensitive data is stored (database, contacts, logs, audio recordings). The exact mechanism is an implementation decision.
 5. The audit trail is itself sensitive data, subject to Story 4b's access-control rule.
+
+**Story 4c status (2026-11-04).** Items 1 and 3 are not verified yet. The live conversation sends the child's voice to a cloud real-time service (Pollen's hosted proxy on Hugging Face), and the messaging assistant calls Hugging Face Inference. Their retention and training policies still have to be read and recorded here. Items 2, 4 and 5 are built.

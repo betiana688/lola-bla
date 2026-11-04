@@ -86,3 +86,26 @@ This project currently runs in `native` mode (set at container startup) and poll
 
 ---
 *Curated for the Lola Reachy Signal app project — not exhaustive. See the official Swagger docs linked above for the complete, authoritative endpoint list.*
+
+## Findings from our own tests (2026-11)
+
+Observed against signal-cli-rest-api 0.100 (`MODE=native`) while building the console. Phone numbers are never shown here.
+
+| What we did | What the API answered |
+|---|---|
+| `DELETE /v1/devices/{number}/{deviceId}` for our own linked device | 400 "This command doesn't work on linked devices": only the phone can remove a linked device |
+| `POST /v1/unregister/{number}` with `delete_account: false` | 204. Afterwards `/v1/accounts` answers `[]` and `/v1/devices/{number}` answers 400 "User ... is not registered". The device stays on Signal's side until it is removed on the phone |
+| `DELETE /v1/devices/{number}/local-data` with `ignore_registered: false`, after the unregister | 204. The account's keys and database files in the data folder are removed (a few cached files remain) |
+| A device removed in Signal on the phone | Another instance of the same account no longer lists it. The instance that owned it answers `/v1/accounts` with 500 ("invalid character ... after top-level value") and `/v1/devices/{number}` with 400 "not registered" |
+| `GET /v1/qrcodelink?device_name=NAME` | 200, `Content-Type: image/png`, a small PNG (about 1 KB). A fresh instance with no account answers `[]` at `/v1/accounts` |
+| `GET /v1/qrcodelink/raw?device_name=NAME` | JSON `{"device_link_uri": "sgnl://linkdevice?..."}` |
+| Linking the same account again after unlinking | Works, and the new device can get the same ID as before |
+| Asking for a second QR code after cancelling the first | Works: the second code links |
+
+Other things worth knowing:
+
+- Device IDs are per Signal account (the phone is 1, the robot 2, a test device on the same account 3). Record the ID together with `creation_timestamp`, and never rely on the device name.
+- A device entry has `id` (int), `name` (str, empty for the phone), `creation_timestamp` and `last_seen_timestamp` (ints).
+- Group `members` are Signal UUIDs only, with no numbers or names. The contact list has numbers and names, but only a few entries carry a UUID, so group members cannot be matched to contact names reliably.
+- The API does one operation at a time ("Config file is in use by another instance, waiting"). A receive after a month of silence took about two minutes, and a call made meanwhile had to wait.
+- It warns when messages have not been received for a long time ("last received 30 days ago"). The background sync every 2 minutes also keeps the device active.

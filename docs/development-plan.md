@@ -164,7 +164,7 @@ Key decisions: Signal's own group identifier is stored in its raw form and conve
 | 1 — Reading messages | ✅ Complete |
 | 2 — Sending messages | ✅ Complete |
 | 3 — Configuration console | 🔨 In progress: sign-in, change password and Signal linking are built; unlink, groups, contacts and logs are next |
-| 4 — Performance, security, privacy | ✅ Complete and verified |
+| 4 — Performance, security, privacy | ✅ Built and tested. One check is still open: the cloud providers' data-retention and training policies (Story 4c, items 1 and 3) have not been checked yet |
 
 ## 7. Backlog
 

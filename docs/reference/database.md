@@ -28,7 +28,7 @@ The source of truth is [`app/local_data/schema.sql`](../../app/local_data/schema
 
 **Create the database from the schema:**
 ```bash
-sqlite3 ~/lola-bla-agents/reachy_mini_conversation_app/local_data/lola.db < ~/lola-bla-app/app/schema.sql
+sqlite3 ~/lola-bla-agents/reachy_mini_conversation_app/local_data/lola.db < ~/lola-bla/app/local_data/schema.sql
 ```
 
 **List all tables (sanity check):**

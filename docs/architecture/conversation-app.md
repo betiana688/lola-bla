@@ -69,6 +69,10 @@ stateDiagram-v2
   end note
 ```
 
+**As built.** Playing plays every unplayed message of the chosen group, or only those from one sender, in order. A message is marked played only if playback really succeeded, so a failure never loses a message. There is no Stop or Continue yet, and no way to replay a message that was already played; both are in the [backlog](../backlog.md).
+
+**As built.** Playing plays every unplayed message of the chosen group, or only those from one sender, in order. A message is marked played only if playback really succeeded, so a failure never loses a message. There is no Stop or Continue yet, and no way to replay a message that was already played; both are in the [backlog](../backlog.md).
+
 ### Recording and sending a reply
 
 ```mermaid
@@ -84,6 +88,10 @@ stateDiagram-v2
   Stopped --> Stopped : "send" (failure, reported, retry choice)
   Sent --> [*]
 ```
+
+**As built.** After the start beep the app records until about 5 seconds of silence (30 seconds at most), plays a done beep, and keeps the recording only if something was heard. The child can then hear it again, send it, or record it again (a new recording replaces the old one only if it succeeds). A failed or refused send keeps the recording. There is no pause or continue while recording and no separate "delete"; recording again replaces it. Both are in the [backlog](../backlog.md).
+
+**As built.** After the start beep the app records until about 5 seconds of silence (30 seconds at most), plays a done beep, and keeps the recording only if something was heard. The child can then hear it again, send it, or record it again (a new recording replaces the old one only if it succeeds). A failed or refused send keeps the recording. There is no pause or continue while recording and no separate "delete"; recording again replaces it. Both are in the [backlog](../backlog.md).
 
 ## Modules
 
@@ -172,6 +180,10 @@ flowchart TD
 ```
 
 ### `emotions.py`
+
+> **Prototype only.** This module belongs to the first, local version (`prototype/emotions.py`). In the current app Reachy's expressions come from Pollen's built-in `play_emotion` tool, which the live agent calls itself with an intent such as `happy` or `confused`, and going to sleep is Pollen's `go_to_sleep` tool.
+
+> **Prototype only.** This module belongs to the first, local version (`prototype/emotions.py`). In the current app Reachy's expressions come from Pollen's built-in `play_emotion` tool, which the live agent calls itself with an intent such as `happy` or `confused`, and going to sleep is Pollen's `go_to_sleep` tool.
 
 ```mermaid
 flowchart TD

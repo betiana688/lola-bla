@@ -2,6 +2,10 @@
 
 Reachy's reactions per conversation state. States match the diagrams in [conversation-app.md](../architecture/conversation-app.md).
 
+> **Note (2026-11-04).** The mapping below was written for the first, local version, where code picked a clip for each state (`prototype/emotions.py`). In the current app the live agent chooses Reachy's expression itself through Pollen's `play_emotion` tool, which takes an intent such as `happy` or `confused`. The table is kept as a reference for how each situation should feel.
+
+> **Note (2026-11-04).** The mapping below was written for the first, local version, where code picked a clip for each state (`prototype/emotions.py`). In the current app the live agent chooses Reachy's expression itself through Pollen's `play_emotion` tool, which takes an intent such as `happy` or `confused`. The table is kept as a reference for how each situation should feel.
+
 ## Idle / awake
 
 | Trigger | Reachy behavior |

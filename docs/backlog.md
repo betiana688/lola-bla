@@ -70,5 +70,12 @@
 
 ### Console step 8 (2026-11-04)
 - Adopt an existing Signal account: if the Signal API already has an account that the database does not know, the Signal page shows "A different account" and offers nothing. It needs the clean-up flow (step 8b) or an "adopt" button.
-- Unknown until tested on the throwaway instance: how long a QR code stays valid, and whether asking for a second code leaves the first one waiting.
+- QR codes: a second code requested after Cancel works (tested 2026-11-04). Still unknown: how long a code stays valid, and whether an earlier code keeps waiting.
 - The link in progress and the one-time messages live in memory, so restarting the console cancels a link in progress.
+
+### Docs and unlink (2026-11-04)
+- Step 8b: decide the unlink order by experiment (phone first, then the console cleans up). Until then, the unlink diagram in `console.md` shows the order we tested in isolation, and its open point says why it cannot be the final one.
+- The three PNG diagrams in `docs/architecture/images/` predate the console, the fallback and the background sync. The Mermaid versions in the text are the current ones.
+
+### Before publishing: privacy check (2026-11-04)
+- Read and record the data-retention and training policies of the two cloud services: Pollen's hosted real-time conversation proxy (it hears the child's voice) and Hugging Face Inference Providers (the messaging assistant). Story 4c items 1 and 3 depend on it.
