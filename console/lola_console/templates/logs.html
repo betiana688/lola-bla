@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Logs - Lola-Bla console{% endblock %}
+{% block body %}
+<h1>Logs</h1>
+<p>
+{% for key, label, query in views %}{% if key == view %}<strong aria-current="page">{{ label }}</strong>{% else %}<a href="/logs?{{ query }}">{{ label }}</a>{% endif %}{% if not loop.last %} &middot; {% endif %}{% endfor %}
+</p>
+<p class="muted">Times are in {{ zone_name }}. Numbers and IDs in log text are masked. Nothing can be edited or deleted here.</p>
+<form method="get" action="/logs">
+  <input type="hidden" name="view" value="{{ view }}">
+  <label for="period">Period</label>
+  <select id="period" name="period">
+    {% for key, label in periods %}<option value="{{ key }}"{% if key == period %} selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  {% for f in filters %}
+  <label for="f-{{ f.name }}">{{ f.label }}</label>
+  <select id="f-{{ f.name }}" name="{{ f.name }}">
+    <option value="all"{% if f.value == "all" %} selected{% endif %}>All</option>
+    {% for value, label in f.choices %}<option value="{{ value }}"{% if value == f.value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  {% endfor %}
+  <button type="submit" class="secondary">Apply</button>
+</form>
+{% for e in entries %}
+{% if view == "activity" %}
+<article class="entry">
+  <p><span class="badge {{ e.badge }}">{{ e.label }}</span> <strong>{{ e.title }}</strong></p>
+  <p class="muted">{{ e.when }}{% if e.extra %} &middot; message {{ e.extra }}{% endif %}</p>
+  {% if e.text %}<p>{{ e.text }}</p>{% endif %}
+</article>
+{% else %}
+<article class="entry">
+  <p><strong>{{ e.op }}</strong> on {{ e.table }} by {{ e.who }}</p>
+  <p class="muted">{{ e.when }}{% if e.record %} &middot; record {{ e.record }}{% endif %}</p>
+</article>
+{% endif %}
+{% else %}
+<p>Nothing here for these filters.</p>
+{% endfor %}
+<p class="pager">
+  {% if prev_query %}<a href="/logs?{{ prev_query }}">&larr; Newer</a>{% else %}<span></span>{% endif %}
+  <span class="muted">Page {{ page }}</span>
+  {% if next_query %}<a href="/logs?{{ next_query }}">Older &rarr;</a>{% else %}<span></span>{% endif %}
+</p>
+<p><a href="/">Back</a></p>
+{% endblock %}

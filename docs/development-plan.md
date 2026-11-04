@@ -84,6 +84,7 @@ Rather than patch around the local performance ceiling, the app was rebuilt on a
 9. Console step 8b: unlinking is a guided action (the robot is marked unlinked first, then unregister, then delete the app's local Signal data), because only the phone can revoke a linked device. An accident during testing (the device removed before the console saw the link) led to a clearer message on the link page: a code works only once. Tested live against a throwaway Signal API in both orders (console first; phone first, then Clean up), including the wrong-password refusal, by the author's report.
 10. Console step 9: the Groups page. Groups are added from the list Signal gives (names and member counts only), renamed, deactivated or removed. Removing deletes the group, its contacts, its messages and their audio files after a typed word and the password. A read-only mode for the Signal client (`LOLA_SIGNAL_READONLY=1`) lets a test console read the real group list without being able to change anything.
 11. Console step 10: the Contacts page. Approved contacts come from the Signal contact list (people with a phone number only), are shown with a masked number, and can be renamed or removed. Removing deletes their messages and audio. Adding needs no extra password, by the author's choice.
+12. Console step 11: the Logs page. The activity log and the audit log can be read, filtered and paged, in local time, with failures marked. Numbers and IDs in log text are masked, and nothing can be edited or deleted. The robot's own timestamps may use a different format than the console's, so the page normalises every timestamp in SQL before filtering and sorting.
 
 ## 4. Architecture
 
@@ -166,12 +167,12 @@ Key decisions: Signal's own group identifier is stored in its raw form and conve
 |---|---|
 | 1 — Reading messages | ✅ Complete |
 | 2 — Sending messages | ✅ Complete |
-| 3 — Configuration console | 🔨 In progress: sign-in, change password, Signal linking and unlinking, groups and contacts are built; logs are next |
+| 3 — Configuration console | 🔨 Nearly done: all pages are built; running it as a service at boot and the security review are next |
 | 4 — Performance, security, privacy | ✅ Built and tested. Story 4c is only partly verified: the cloud services' data policies were read on 2026-11-04, and nothing published could be found for the live conversation (see the [cloud privacy check](reference/cloud-privacy-check.md)) |
 
 ## 7. Backlog
 
-- Configuration console (Story 3): the logs page, then run it as a service
+- Configuration console (Story 3): run it as a service at boot, then the security review
 - Robot software version currently one release behind its own SDK
 - Recording is capped at a maximum duration rather than being fully open-ended
 - The Signal API image is pinned only on this Pi (a local tag); `app/install.sh` does not set it up yet

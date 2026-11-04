@@ -8,10 +8,11 @@
   <dt>Signal account</dt><dd>{{ account_status }}</dd>
   <dt>Approved groups</dt><dd>{{ groups }}</dd>
   <dt>Approved contacts</dt><dd>{{ contacts }}</dd>
-  <dt>Failures in the last 24 hours</dt><dd>{{ failures }}</dd>
+  <dt>Failures in the last 24 hours</dt><dd><a href="/logs?view=activity&amp;status=failed&amp;period=1d">{{ failures }}</a></dd>
 </dl>
 <p class="muted">The Link, Groups, Contacts and Logs pages come in the next steps.</p>
 <p><a href="/groups">Groups</a></p>
+<p><a href="/logs">Logs</a></p>
 <p><a href="/signal">Signal account</a></p>
 <p><a href="/password">Change password</a></p>
 <form method="post" action="/logout">

@@ -4,7 +4,7 @@
 |---|---|
 | 1 — Reading messages | ✅ Complete |
 | 2 — Replying to messages | ✅ Complete |
-| 3 — Configuring the app | 🔨 In progress: sign-in, password, Signal linking and unlinking, groups and contacts are built; logs are next |
+| 3 — Configuring the app | 🔨 Nearly done: sign-in, password, Signal linking and unlinking, groups, contacts and logs are built; running the console as a service and the security review are next |
 | 4 — Performance, security, privacy | ✅ Built and tested. Story 4c is only partly verified: the cloud services' data policies were read on 2026-11-04, and nothing published could be found for the live conversation (see the [cloud privacy check](../reference/cloud-privacy-check.md)) |
 
 ## Story 1: Reading messages
@@ -53,7 +53,7 @@ As Betiana, I want to configure the app, because I want to make sure who can int
 9. Add, deactivate, and remove approved groups.
 10. Add, rename and remove contacts within an approved group. A contact is a person from the user's Signal contact list who has a phone number; people known only by a Signal ID cannot be approved, so the user knows the number of everyone who can talk to the child. Removing a contact deletes their messages and audio and takes effect immediately, after a typed word and the password. Adding a contact needs no extra password: a deliberate choice, which means anyone at a signed-in browser could approve a contact.
 11. Group and contact identifiers come from Signal (its group list and its contact list); only the spoken name is typed. The console never shows a phone number in full.
-12. The audit log and activity log are viewable only when signed in, with failures highlighted.
+12. The audit log and the activity log are viewable only when signed in, with failures highlighted, filterable by status, event, who, table, operation and period, and shown in local time. Numbers and IDs in log text are masked, and the logs cannot be edited or deleted from the console.
 
 ### Audit
 

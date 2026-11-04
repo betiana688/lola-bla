@@ -192,3 +192,15 @@ Only people with a phone number in the Signal contact list can be approved. This
 The audit log records `contact_added`, `contact_renamed` and `contact_removed` with the contact's internal ID, never a name or number. The activity log records only counts.
 
 Known limit: if a person hides their number from group members, Signal may deliver their message with only an ID, and the robot ignores it as an unknown sender (it shows in the activity log).
+
+### Logs (step 11)
+
+`/logs` shows two read-only views: **Activity** (the `log_entries` table: what happened) and **Audit** (the `audit_log` table: who touched which data, and when). Newest first, 50 per page, with Newer and Older links.
+
+| Piece | Behaviour |
+|---|---|
+| Filters | Activity: status, event, period. Audit: who, table, operation, period. Periods are the last 24 hours, 7 days (the default), 30 days or everything. The choices come from what is in the log, and any other value in the address is ignored |
+| Highlighting | `failed` entries carry the word FAILED and a strong marker. `degraded` (the local fallback) and `ignored` (an unknown sender) get a dashed marker. Nothing relies on colour alone |
+| Times | Shown in local time with the zone named (`LOLA_TIMEZONE`, default `Europe/Berlin`; an unknown zone falls back to UTC). Stored times stay as they are. Every timestamp is normalised by SQLite's `datetime()` before filtering and sorting, so the robot's and the console's formats can differ. A timestamp that cannot be read is shown as written |
+| Masking | Phone numbers, Signal IDs and long numbers inside log text become `[number]` or `[id]`, and record IDs are cut to 8 characters. This is a safety net, not a guarantee: the code that writes the logs is not meant to write numbers or IDs at all |
+| Read-only | There is no way to edit or delete a log entry from the console, so the page cannot hide anything. Looking at a page is not recorded in the audit log, as for the other pages (they record changes) |

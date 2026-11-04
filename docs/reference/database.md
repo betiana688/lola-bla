@@ -93,6 +93,8 @@ sqlite3 ~/lola-bla-agents/reachy_mini_conversation_app/local_data/lola.db "SELEC
 
 ## Inspecting logs (debugging)
 
+The console's Logs page shows both logs now, with filters and masking. The commands below still work.
+
 **Most recent log entries:**
 ```bash
 sqlite3 ~/lola-bla-agents/reachy_mini_conversation_app/local_data/lola.db "SELECT * FROM log_entries ORDER BY occurred_at DESC LIMIT 5;"

@@ -20,3 +20,10 @@ dd { margin: 0; }
 .inline input { flex: 1; }
 .inline button { margin-top: 0; }
 summary { cursor: pointer; margin: 0.6rem 0; }
+select { box-sizing: border-box; width: 100%; padding: 0.5rem; font-size: 1rem; border: 1px solid GrayText; border-radius: 0.4rem; background: Field; color: FieldText; }
+.entry { border-bottom: 1px solid GrayText; padding: 0.4rem 0; }
+.entry p { margin: 0.2rem 0; overflow-wrap: anywhere; }
+.badge { display: inline-block; padding: 0 0.4rem; border: 1px solid GrayText; border-radius: 0.3rem; font-size: 0.85rem; }
+.badge.failed { background: Mark; color: MarkText; font-weight: 700; border-color: MarkText; }
+.badge.soft { border-style: dashed; }
+.pager { display: flex; justify-content: space-between; margin: 1rem 0; }

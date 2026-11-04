@@ -100,3 +100,8 @@
 - Decision: adding a contact needs no extra password (the author's choice). Revisit if the console is ever reachable by anyone else.
 - Limit: a contact who hides their number from group members may arrive as an ID only and be ignored as an unknown sender. A second contact row holding the ID would fix it, but it needs the ID, which only some contacts have.
 - Tried in a browser on 2026-11-04 on a copy of the database with the real Signal contact list, by the author's report (add, rename, remove). Not individually confirmed: the refusals, and that the robot picks up contact changes on its next check without a restart.
+
+### Console step 11 (2026-11-04)
+- Log retention: both logs only grow, but slowly: on 2026-11-04 the audit log had 132 rows since 25 September and the activity log 10 since 28 October. Not urgent. Decide later how long to keep entries and how to trim them safely; the console deliberately cannot delete them.
+- The mask on the Logs page is a safety net. If a real log line ever shows a number or an ID after masking, fix the code that wrote it.
+- Not yet tried: the Logs page in a browser against the real logs.

@@ -54,3 +54,11 @@ The Groups page lists the approved groups and lets you add one from the groups y
 ## Step 10: contacts
 
 Each group on the Groups page has a Contacts page. Add a person from your Signal contacts (only people with a phone number), rename them, or remove them, which deletes their messages and audio and needs the word REMOVE and your password. Numbers are shown masked.
+
+## Step 11: logs
+
+The Logs page shows the activity log and the audit log, read-only, with filters, paging, masking of numbers and IDs, and times in local time.
+
+| Setting | Purpose |
+|---|---|
+| `LOLA_TIMEZONE` | The time zone for displayed times (default `Europe/Berlin`) |

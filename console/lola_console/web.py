@@ -24,7 +24,7 @@ from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-from . import auth, contactadmin, groupadmin, link, signal_api, users
+from . import auth, contactadmin, groupadmin, link, logview, signal_api, users
 from .sessions import SESSION_SECONDS, Signer, load_or_create_secret
 
 BASE = Path(__file__).parent
@@ -243,7 +243,7 @@ async def home(request):
         groups = con.execute("SELECT COUNT(*) FROM groups WHERE is_active = 1").fetchone()[0]
         contacts = con.execute("SELECT COUNT(*) FROM contacts").fetchone()[0]
         failures = con.execute("SELECT COUNT(*) FROM log_entries WHERE status = 'failed' "
-                               "AND occurred_at > datetime('now', '-1 day')").fetchone()[0]
+                               "AND datetime(occurred_at) > datetime('now', '-1 day')").fetchone()[0]
     finally:
         con.close()
     return templates.TemplateResponse(request, "home.html", {
@@ -804,6 +804,15 @@ async def contacts_remove_post(request):
     return _group_redirect(app, contactadmin.removal_summary(result), _contacts_url(result["group_id"]))
 
 
+async def logs_get(request):
+    user = _current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    data = await run_in_threadpool(_with_con, request.app.state.db_path, logview.build_page,
+                                   dict(request.query_params))
+    return templates.TemplateResponse(request, "logs.html", data)
+
+
 def create_app(db_path=None, secret=None, allowed_hosts=None, signal_client=None, device_name=None):
     middleware = [Middleware(SecurityHeaders)]
     if allowed_hosts:
@@ -832,6 +841,7 @@ def create_app(db_path=None, secret=None, allowed_hosts=None, signal_client=None
         Route("/contacts/add", contacts_add_post, methods=["POST"]),
         Route("/contacts/rename", contacts_rename_post, methods=["POST"]),
         Route("/contacts/remove", contacts_remove_post, methods=["POST"]),
+        Route("/logs", logs_get, methods=["GET"]),
         Mount("/static", StaticFiles(directory=str(BASE / "static")), name="static"),
     ]
     app = Starlette(routes=routes, middleware=middleware)
