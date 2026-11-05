@@ -123,3 +123,17 @@ button svg, .button svg { width: 1.5em; height: 1.5em; flex: none; }
 .tiles .button { flex-direction: column; min-height: 130px; padding: 1.1rem 1rem; border-radius: 28px; font-size: 1.4rem; line-height: 1.2; }
 .tiles .button svg { width: 44px; height: 44px; }
 @media (max-width: 420px) { .tiles { grid-template-columns: 1fr; } }
+
+/* user menu and jump buttons */
+.menu { position: relative; }
+.menu summary { list-style: none; cursor: pointer; gap: 0.5rem; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu summary svg { width: 1.3em; height: 1.3em; }
+.menu[open] summary { background: var(--berenjena); color: var(--crema); }
+.menu-panel { position: absolute; right: 0; top: calc(100% + 10px); z-index: 20; width: min(21rem, calc(100vw - 24px)); padding: 14px; display: grid; gap: 10px; background: var(--card); color: var(--ink); border: var(--line) solid var(--ink); border-radius: 28px; }
+.menu-panel .who { margin: 0 4px; font-size: 0.95rem; }
+.menu-panel .button, .menu-panel button { width: 100%; margin: 0; justify-content: flex-start; font-size: 1.15rem; }
+header.top .menu-panel form { display: block; margin: 0; }
+.jump { position: fixed; right: 12px; bottom: 12px; z-index: 15; display: grid; gap: 8px; }
+.jump a { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; background: var(--banana); color: var(--berenjena); border: var(--line) solid var(--ink); border-radius: 50%; text-decoration: none; }
+.jump svg { width: 26px; height: 26px; }

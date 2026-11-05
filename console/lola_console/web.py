@@ -29,7 +29,13 @@ from .sessions import SESSION_SECONDS, Signer, load_or_create_secret
 
 BASE = Path(__file__).parent
 logger = logging.getLogger("lola_console")
-templates = Jinja2Templates(directory=str(BASE / "templates"))
+def _menu_context(request):
+    """Lets every page show the user menu: who is signed in and the sign-out token."""
+    user = _current_user(request)
+    return {"menu_user": user["username"], "menu_csrf": user["csrf"]} if user else {}
+
+
+templates = Jinja2Templates(directory=str(BASE / "templates"), context_processors=[_menu_context])
 
 MAX_FAILED = 5
 LOCK_MINUTES = 15

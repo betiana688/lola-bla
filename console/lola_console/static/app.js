@@ -10,3 +10,14 @@ document.querySelectorAll("[data-toggle-password]").forEach(function (button) {
     button.setAttribute("aria-pressed", show ? "true" : "false");
   });
 });
+
+document.addEventListener("click", function (event) {
+  document.querySelectorAll("details.menu[open]").forEach(function (menu) {
+    if (!menu.contains(event.target)) { menu.removeAttribute("open"); }
+  });
+});
+document.addEventListener("keydown", function (event) {
+  if (event.key === "Escape") {
+    document.querySelectorAll("details.menu[open]").forEach(function (menu) { menu.removeAttribute("open"); });
+  }
+});

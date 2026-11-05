@@ -49,7 +49,8 @@ def serve(stop_event, port=None, tls_dir=None, db_path=None, allowed_hosts=None,
     hosts = allowed_hosts if allowed_hosts is not None else tls.allowed_hosts()
     app = create_app(db_path=db_path, secret=secret, allowed_hosts=hosts)
     config = uvicorn.Config(app, host=host, port=port, ssl_keyfile=str(key), ssl_certfile=str(cert),
-                            server_header=False, access_log=False, log_level=log_level)
+                            server_header=False, access_log=False, log_level=log_level,
+                            timeout_graceful_shutdown=3)
     server = uvicorn.Server(config)
     server.install_signal_handlers = lambda: None  # we are not on the main thread; the caller owns signals
     thread = threading.Thread(target=server.run, name="lola-console", daemon=True)

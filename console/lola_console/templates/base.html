@@ -7,15 +7,32 @@
 <link rel="icon" type="image/svg+xml" href="/static/lola-bla-icon.svg">
 <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
+<body id="top">
 <header class="top">
 <a class="brand" href="/"><img src="/static/lola-bla-mark.svg" alt="" width="52" height="52"><span class="word">lola-bla</span></a>
-<nav>{% block nav %}<a class="navlink" href="/">&larr; home</a>{% endblock %}</nav>
+{% block nav %}{% if menu_user %}
+<details class="menu">
+<summary class="navlink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>menu</span></summary>
+<div class="menu-panel">
+<p class="who muted">signed in as <strong>{{ menu_user }}</strong></p>
+<a class="button" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>home</a>
+<a class="button" href="/groups"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17.5 14c2.4 0 4 1.7 4 4.5"/></svg>groups</a>
+<a class="button" href="/logs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>logs</a>
+<a class="button" href="/signal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8.5 8.5 0 0 1-12.3 7.6L3 21l1.5-5.2A8.5 8.5 0 1 1 21 12z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></svg>signal account</a>
+<a class="button" href="/password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/></svg>change password</a>
+<form method="post" action="/logout">
+<input type="hidden" name="csrf" value="{{ menu_csrf }}">
+<button type="submit" class="secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>sign out</button>
+</form>
+</div>
+</details>
+{% endif %}{% endblock %}
 </header>
 <main>
 {% block body %}{% endblock %}
 </main>
-<footer><p>talk to abuelo without a phone.</p></footer>
+<footer id="bottom"><p>talk to abuelo without a phone.</p></footer>
+{% if menu_user %}<div class="jump"><a href="#top" aria-label="jump to the top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></a><a href="#bottom" aria-label="jump to the bottom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg></a></div>{% endif %}
 <script src="/static/app.js" defer></script>
 </body>
 </html>
