@@ -629,9 +629,11 @@ async def groups_get(request):
         return RedirectResponse("/login", status_code=303)
     app = request.app
     items = await run_in_threadpool(_with_con, app.state.db_path, groupadmin.list_groups)
+    people = await run_in_threadpool(_with_con, app.state.db_path, groupadmin.people_by_group)
     flash, app.state.flash = app.state.flash, None
     return templates.TemplateResponse(request, "groups.html", {
-        "groups": items, "csrf": user["csrf"], "flash": flash, "remove_word": GROUP_REMOVE_WORD})
+        "groups": items, "people": people, "csrf": user["csrf"], "flash": flash,
+        "remove_word": GROUP_REMOVE_WORD})
 
 
 async def groups_add_get(request):

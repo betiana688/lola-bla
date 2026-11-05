@@ -5,38 +5,49 @@
 <p>Group: <strong>{{ group.name }}</strong>{% if not group.active %} (inactive){% endif %}</p>
 {% if flash %}<p class="notice" role="status">{{ flash }}</p>{% endif %}
 <p>Only these people can send messages that Reachy will play from this group. Anyone else is ignored.</p>
+<p><a class="button" href="/contacts/add?group={{ group.id | urlencode }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add a contact</a></p>
+{% if contacts %}
+<section class="glance" aria-labelledby="glance-title">
+  <h2 id="glance-title">at a glance</h2>
+  <ul class="chips" aria-label="Approved contacts in {{ group.name }}">
+    {% for c in contacts %}<li><a href="#c-{{ c.id }}">{{ c.name }}</a></li>{% endfor %}
+  </ul>
+</section>
+<h2>manage</h2>
 {% for c in contacts %}
-<section class="group">
-  <h2>{{ c.name }}</h2>
-  <p>{{ c.number }} &middot; {{ c.messages }} message{{ "" if c.messages == 1 else "s" }}</p>
-  <form method="post" action="/contacts/rename" class="inline">
-    <input type="hidden" name="csrf" value="{{ csrf }}">
-    <input type="hidden" name="id" value="{{ c.id }}">
-    <input type="hidden" name="group" value="{{ group.id }}">
-    <input name="name" type="text" value="{{ c.name }}" maxlength="40" aria-label="Spoken name" required>
-    <button type="submit" class="secondary">Rename</button>
-  </form>
-  <details>
-    <summary>Remove this contact</summary>
-    <p>This removes {{ c.name }} and deletes their {{ c.messages }} message{{ "" if c.messages == 1 else "s" }}, including the audio files. It cannot be undone.</p>
-    <form method="post" action="/contacts/remove">
+<details class="item" id="c-{{ c.id }}">
+  <summary><span class="item-title">{{ c.name }}</span><span class="item-meta">{{ c.number }} &middot; {{ c.messages }} message{{ "" if c.messages == 1 else "s" }}</span></summary>
+  <div class="item-body">
+    <p>{{ c.number }} &middot; {{ c.messages }} message{{ "" if c.messages == 1 else "s" }}</p>
+    <form method="post" action="/contacts/rename" class="inline">
       <input type="hidden" name="csrf" value="{{ csrf }}">
       <input type="hidden" name="id" value="{{ c.id }}">
       <input type="hidden" name="group" value="{{ group.id }}">
-      <label for="rm-confirm-{{ loop.index }}">Type {{ remove_word }} to confirm</label>
-      <input id="rm-confirm-{{ loop.index }}" name="confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
-      <label for="rm-pw-{{ loop.index }}">Your password</label>
-      <div class="row">
-        <input id="rm-pw-{{ loop.index }}" name="password" type="password" autocomplete="current-password" required>
-        <button type="button" class="secondary eye" data-toggle-password="rm-pw-{{ loop.index }}" aria-pressed="false" aria-label="show password"><svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg></button>
-      </div>
-      <button type="submit">Remove</button>
+      <input name="name" type="text" value="{{ c.name }}" maxlength="40" aria-label="Spoken name" required>
+      <button type="submit" class="secondary">Rename</button>
     </form>
-  </details>
-</section>
+    <details>
+      <summary>Remove this contact</summary>
+      <p>This removes {{ c.name }} and deletes their {{ c.messages }} message{{ "" if c.messages == 1 else "s" }}, including the audio files. It cannot be undone.</p>
+      <form method="post" action="/contacts/remove">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="id" value="{{ c.id }}">
+        <input type="hidden" name="group" value="{{ group.id }}">
+        <label for="rm-confirm-{{ loop.index }}">Type {{ remove_word }} to confirm</label>
+        <input id="rm-confirm-{{ loop.index }}" name="confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+        <label for="rm-pw-{{ loop.index }}">Your password</label>
+        <div class="row">
+          <input id="rm-pw-{{ loop.index }}" name="password" type="password" autocomplete="current-password" required>
+          <button type="button" class="secondary eye" data-toggle-password="rm-pw-{{ loop.index }}" aria-pressed="false" aria-label="show password"><svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg></button>
+        </div>
+        <button type="submit">Remove</button>
+      </form>
+    </details>
+  </div>
+</details>
+{% endfor %}
 {% else %}
 <p>No contacts approved in this group yet.</p>
-{% endfor %}
-<p><a href="/contacts/add?group={{ group.id | urlencode }}">Add a contact</a></p>
+{% endif %}
 <p class="back"><a class="button" href="/groups">&larr; Back to groups</a></p>
 {% endblock %}

@@ -178,3 +178,11 @@ def removal_summary(result):
         text += (f" {result['files_left']} audio file(s) left alone "
                  "(outside the app's audio folder, or could not be deleted).")
     return text
+
+
+def people_by_group(con):
+    """Contact names per group, for the overview on the Groups page: {group_id: [name, ...]}."""
+    found = {}
+    for group_id, name in con.execute("SELECT group_id, name FROM contacts ORDER BY name COLLATE NOCASE"):
+        found.setdefault(group_id, []).append(name)
+    return found

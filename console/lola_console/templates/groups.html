@@ -4,43 +4,62 @@
 <h1>Groups</h1>
 {% if flash %}<p class="notice" role="status">{{ flash }}</p>{% endif %}
 <p>Reachy only reads and plays messages from approved groups, and only from approved contacts inside them.</p>
+<p><a class="button" href="/groups/add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add a group</a></p>
+{% if groups %}
+<section class="glance" aria-labelledby="glance-title">
+  <h2 id="glance-title">at a glance</h2>
+  {% for g in groups %}
+  <div class="glance-row">
+    <a class="glance-name" href="#g-{{ g.id }}"><span class="dot{{ '' if g.active else ' off' }}" aria-hidden="true"></span>{{ g.name }}</a>
+    <span class="badge{{ '' if g.active else ' soft' }}">{{ "active" if g.active else "inactive" }}</span>
+    <ul class="chips" aria-label="Contacts in {{ g.name }}">
+      {% for p in (people or {}).get(g.id, []) %}<li>{{ p }}</li>{% else %}<li class="none">no contacts yet</li>{% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+</section>
+<h2>manage</h2>
 {% for g in groups %}
-<section class="group">
-  <h2>{{ g.name }}</h2>
-  <p>{{ "Active" if g.active else "Inactive: Reachy ignores it" }} &middot; {{ g.contacts }} contact{{ "" if g.contacts == 1 else "s" }} &middot; {{ g.messages }} message{{ "" if g.messages == 1 else "s" }}</p>
-  <form method="post" action="/groups/rename" class="inline">
-    <input type="hidden" name="csrf" value="{{ csrf }}">
-    <input type="hidden" name="id" value="{{ g.id }}">
-    <input name="name" type="text" value="{{ g.name }}" maxlength="40" aria-label="Spoken name" required>
-    <button type="submit" class="secondary">Rename</button>
-  </form>
-  <form method="post" action="/groups/active">
-    <input type="hidden" name="csrf" value="{{ csrf }}">
-    <input type="hidden" name="id" value="{{ g.id }}">
-    <input type="hidden" name="active" value="{{ 0 if g.active else 1 }}">
-    <button type="submit" class="secondary">{{ "Deactivate" if g.active else "Activate" }}</button>
-  </form>
-  <p><a href="/contacts?group={{ g.id | urlencode }}">Contacts ({{ g.contacts }})</a></p>
-  <details>
-    <summary>Remove this group</summary>
-    <p>This deletes the group, its contacts ({{ g.contacts }}) and its messages ({{ g.messages }}), including their audio files. It cannot be undone. To keep everything and only stop Reachy using it, use Deactivate.</p>
-    <form method="post" action="/groups/remove">
+<details class="item" id="g-{{ g.id }}">
+  <summary><span class="item-title">{{ g.name }}</span><span class="item-meta">{{ g.contacts }} contact{{ "" if g.contacts == 1 else "s" }} &middot; {{ g.messages }} message{{ "" if g.messages == 1 else "s" }}</span></summary>
+  <div class="item-body">
+    <p>{{ "Active" if g.active else "Inactive: Reachy ignores it" }} &middot; {{ g.contacts }} contact{{ "" if g.contacts == 1 else "s" }} &middot; {{ g.messages }} message{{ "" if g.messages == 1 else "s" }}</p>
+    <form method="post" action="/groups/rename" class="inline">
       <input type="hidden" name="csrf" value="{{ csrf }}">
       <input type="hidden" name="id" value="{{ g.id }}">
-      <label for="rm-confirm-{{ loop.index }}">Type {{ remove_word }} to confirm</label>
-      <input id="rm-confirm-{{ loop.index }}" name="confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
-      <label for="rm-pw-{{ loop.index }}">Your password</label>
-      <div class="row">
-        <input id="rm-pw-{{ loop.index }}" name="password" type="password" autocomplete="current-password" required>
-        <button type="button" class="secondary eye" data-toggle-password="rm-pw-{{ loop.index }}" aria-pressed="false" aria-label="show password"><svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg></button>
-      </div>
-      <button type="submit">Remove</button>
+      <input name="name" type="text" value="{{ g.name }}" maxlength="40" aria-label="Spoken name" required>
+      <button type="submit" class="secondary">Rename</button>
     </form>
-  </details>
-</section>
+    <div class="actions">
+      <a class="button" href="/contacts?group={{ g.id | urlencode }}">Contacts ({{ g.contacts }})</a>
+      <form method="post" action="/groups/active">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="id" value="{{ g.id }}">
+        <input type="hidden" name="active" value="{{ 0 if g.active else 1 }}">
+        <button type="submit" class="secondary">{{ "Deactivate" if g.active else "Activate" }}</button>
+      </form>
+    </div>
+    <details>
+      <summary>Remove this group</summary>
+      <p>This deletes the group, its contacts ({{ g.contacts }}) and its messages ({{ g.messages }}), including their audio files. It cannot be undone. To keep everything and only stop Reachy using it, use Deactivate.</p>
+      <form method="post" action="/groups/remove">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="id" value="{{ g.id }}">
+        <label for="rm-confirm-{{ loop.index }}">Type {{ remove_word }} to confirm</label>
+        <input id="rm-confirm-{{ loop.index }}" name="confirm" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+        <label for="rm-pw-{{ loop.index }}">Your password</label>
+        <div class="row">
+          <input id="rm-pw-{{ loop.index }}" name="password" type="password" autocomplete="current-password" required>
+          <button type="button" class="secondary eye" data-toggle-password="rm-pw-{{ loop.index }}" aria-pressed="false" aria-label="show password"><svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg></button>
+        </div>
+        <button type="submit">Remove</button>
+      </form>
+    </details>
+  </div>
+</details>
+{% endfor %}
 {% else %}
 <p>No groups approved yet.</p>
-{% endfor %}
-<p><a href="/groups/add">Add a group</a></p>
+{% endif %}
 <p class="back"><a class="button" href="/">&larr; Back</a></p>
 {% endblock %}
