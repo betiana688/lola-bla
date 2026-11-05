@@ -227,3 +227,11 @@ Boot start is a command on the Pi on purpose, not a switch in the console: the c
 | Only network and local sockets (`AF_NETLINK` too, so it can list the machine's own addresses) | No other kinds of connection |
 
 Logs go to the system journal: `journalctl -u lola-console`. Starting `python3 console/run.py` by hand still works for tests on another port, and refuses on 9443 while the service runs. How the console will start once Lola-Bla is a Reachy Mini app is in [publishing.md](publishing.md).
+
+## Look and feel (2026-11-05)
+
+The console follows the Lola-Bla brand ([docs/brand](../brand/README.md)): banana header band with the speech-bubble mark, a crema card on a lila page, 5px berenjena outlines, 32px corners, Fraunces for titles and DM Mono for everything else, no gradients or shadows. It also has a dark theme (the brand's own dark tokens), chosen by the device setting.
+
+- The fonts, mark and icon are copies of the files in `docs/brand/`, served from the console itself, so a page load never contacts a third party. The CSP gained `font-src 'self'` and nothing else. A test fails if a copy differs from `docs/brand/`.
+- Two choices outside the brand tokens, both for contrast: error badges use a deep red (`#B3261E`) on light and a soft red (`#FF9A90`) on dark, and the dark theme keeps the primary button violeta with crema text, because crema on the lighter dark-mode violeta is below 4.5:1.
+- `tests/test_style.py` checks every text and background pair of both themes for a contrast of at least 4.5:1, and that the CSS has no gradient, shadow or external address.

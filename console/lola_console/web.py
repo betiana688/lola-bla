@@ -39,7 +39,7 @@ LOGIN_COOKIE_SECONDS = 600
 MAX_FIELD = 1024  # longest username or password we will even look at
 
 HEADERS = {
-    "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; "
+    "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; font-src 'self'; "
                                "form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff",

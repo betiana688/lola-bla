@@ -132,3 +132,10 @@
 - README: include the most important architecture diagrams (the current Mermaid versions, not the old PNGs in `docs/architecture/images/`).
 - README: a video of Reachy with the app working.
 - Safening of the app, before publishing: cybersecurity and data privacy. Starts from the security review and the final cybersec recheck at the end of the roadmap (ports, SSH, passwordless sudo, firewall, vulnerability scan, daemon API without a login, app lifecycle) and from "Deeper safety hardening" under General.
+
+### Facts found on the robot (2026-11-05)
+- The framework's own settings server takes only the host and port from `custom_app_url` and has no certificate option. An app can set `dont_start_webserver = True` and serve its own page, so the console can serve HTTPS on the announced address. The daemon reads `custom_app_url` from the app's `main.py` with a pattern, so it must be a plain string in that file. Whether Reachy Mini Control opens a self-signed https page is still untested.
+- Reachy Mini Control allows at most two installed apps at once (reported by the author). Lola-Bla plus one other; Pollen's conversation app counts as an app.
+- The daemon runs from `/venvs/mini_daemon` (Python 3.12). `/venvs/apps_venv` does not exist on this robot yet; the apps environment is created when the first app is installed.
+- Disk: 2.0 GB free of 14 GB (86% used). Our environment 361 MB, the conversation app clone 51 MB, this repository 8 MB.
+- The daemon on this robot has `startup-app`, `restart-current-app`, `start-app/{name}/no-evict`, `install-private-space` and `check-updates` routes, so the R3 toggle is possible.
