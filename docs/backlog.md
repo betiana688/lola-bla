@@ -153,3 +153,7 @@
 - After R6: retest the "Control stops an app after about 62 s" behavior with updated robot and Control.
 - Privacy check: "Share anonymous usage data" is on in Control; decide for Lola's robot.
 - R5: find out what "Clear HuggingFace Cache" would delete before using it.
+
+- [x] R5 space: done 2026-11-05, 3.3 GB free (76%). See docs/architecture/disk-space.md.
+- [ ] R5 follow-up: check if whisper-tiny.en and other apps' HF spaces can go (ask first).
+- [ ] After R6: re-check that /var/swap is still 512 MiB and the drop-in survived.
