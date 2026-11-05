@@ -28,6 +28,10 @@
 - [Cloud privacy check](reference/cloud-privacy-check.md): what the two cloud services publish about data (Story 4c)
 - [Security review](reference/security-review.md): what is reachable, what is protected, what is accepted, what is still to check
 
+## Brand
+
+- [Brand](brand/README.md): the mark, app icon, colours, type, voice and ready-made posters
+
 ## Agent profile
 
 - [profiles/lola/profile.md](../profiles/lola/profile.md): personality, safety rules, voice, enabled tools

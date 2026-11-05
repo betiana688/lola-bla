@@ -1,0 +1,30 @@
+/* Lola-Bla brand tokens. Source of truth: docs/brand/README.md */
+@font-face { font-family: "Fraunces"; src: url("fonts/Fraunces.ttf") format("truetype"); font-weight: 100 900; font-style: normal; }
+@font-face { font-family: "Fraunces"; src: url("fonts/Fraunces-Italic.ttf") format("truetype"); font-weight: 100 900; font-style: italic; }
+@font-face { font-family: "DM Mono"; src: url("fonts/DMMono-Regular.ttf") format("truetype"); font-weight: 400; }
+@font-face { font-family: "DM Mono"; src: url("fonts/DMMono-Medium.ttf") format("truetype"); font-weight: 500; }
+
+:root {
+  /* color */
+  --lb-banana: #F7D33E;    /* main ground, highlights, the sound wave */
+  --lb-lila: #C9B3F2;      /* second ground, soft surfaces */
+  --lb-violeta: #7B4FC4;   /* the bubble, accent words, buttons */
+  --lb-berenjena: #2A1640; /* all lines and text */
+  --lb-crema: #FFF8E7;     /* eyes, cards, text on violeta and berenjena */
+
+  /* type */
+  --lb-font-display: "Fraunces", Georgia, serif;
+  --lb-font-mono: "DM Mono", ui-monospace, monospace;
+
+  /* shape */
+  --lb-line: 5px;          /* every outline */
+  --lb-radius-card: 32px;
+  --lb-radius-icon: 22%;
+  --lb-radius-pill: 999px;
+
+  /* space */
+  --lb-space-1: 8px;
+  --lb-space-2: 16px;
+  --lb-space-3: 28px;
+  --lb-space-4: 56px;
+}
