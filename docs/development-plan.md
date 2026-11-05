@@ -85,6 +85,7 @@ Rather than patch around the local performance ceiling, the app was rebuilt on a
 10. Console step 9: the Groups page. Groups are added from the list Signal gives (names and member counts only), renamed, deactivated or removed. Removing deletes the group, its contacts, its messages and their audio files after a typed word and the password. A read-only mode for the Signal client (`LOLA_SIGNAL_READONLY=1`) lets a test console read the real group list without being able to change anything.
 11. Console step 10: the Contacts page. Approved contacts come from the Signal contact list (people with a phone number only), are shown with a masked number, and can be renamed or removed. Removing deletes their messages and audio. Adding needs no extra password, by the author's choice.
 12. Console step 11: the Logs page. The activity log and the audit log can be read, filtered and paged, in local time, with failures marked. Numbers and IDs in log text are masked, and nothing can be edited or deleted. The robot's own timestamps may use a different format than the console's, so the page normalises every timestamp in SQL before filtering and sorting.
+13. Console step 12: the console can run as a systemd service (`console/install_service.sh`), sandboxed, with starting at boot as a separate switch that is off by default. A first security review was written ([security-review.md](reference/security-review.md)), and the notes on publishing as a Reachy Mini app and on switching to another app are in [publishing.md](architecture/publishing.md).
 
 ## 4. Architecture
 

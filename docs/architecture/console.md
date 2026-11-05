@@ -204,3 +204,26 @@ Known limit: if a person hides their number from group members, Signal may deliv
 | Times | Shown in local time with the zone named (`LOLA_TIMEZONE`, default `Europe/Berlin`; an unknown zone falls back to UTC). Stored times stay as they are. Every timestamp is normalised by SQLite's `datetime()` before filtering and sorting, so the robot's and the console's formats can differ. A timestamp that cannot be read is shown as written |
 | Masking | Phone numbers, Signal IDs and long numbers inside log text become `[number]` or `[id]`, and record IDs are cut to 8 characters. This is a safety net, not a guarantee: the code that writes the logs is not meant to write numbers or IDs at all |
 | Read-only | There is no way to edit or delete a log entry from the console, so the page cannot hide anything. Looking at a page is not recorded in the audit log, as for the other pages (they record changes) |
+
+### Running as a service (step 12)
+
+`console/install_service.sh` manages the systemd unit `lola-console.service`:
+
+| Command | What it does |
+|---|---|
+| `./console/install_service.sh` | Installs the unit and starts the console now. It does not start at boot unless you turn that on |
+| `--boot on`, `--boot off` | Starts the console at every boot, or not. It does not start or stop it right now |
+| `--start`, `--stop`, `--status` | Start it, stop it, or show whether it runs and whether boot start is on |
+| `--remove` | Stops it, turns boot start off and deletes the unit. The data, the certificate and the settings stay |
+
+Boot start is a command on the Pi on purpose, not a switch in the console: the console is sandboxed and has no rights over system services, and a web page that could change them would be a way into the machine. After installing, it checks that the sign-in page answers before it reports success.
+
+| Setting | Why |
+|---|---|
+| `Restart=on-failure` after 5 seconds, at most 5 restarts in 2 minutes | It comes back after a crash without looping forever |
+| Runs as the user who installed it, with `NoNewPrivileges` and no capabilities | It needs no extra rights: its port is above 1024 |
+| `ProtectSystem=strict`, `ProtectHome=read-only`, writes allowed only in the database folder and `~/.config/lola-bla` | A bug or a break-in in the console cannot change anything else on the robot |
+| `~/.ssh` and `local_data/hf_token` made inaccessible | The console never needs them |
+| Only network and local sockets (`AF_NETLINK` too, so it can list the machine's own addresses) | No other kinds of connection |
+
+Logs go to the system journal: `journalctl -u lola-console`. Starting `python3 console/run.py` by hand still works for tests on another port, and refuses on 9443 while the service runs. How the console will start once Lola-Bla is a Reachy Mini app is in [publishing.md](publishing.md).

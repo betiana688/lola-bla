@@ -14,9 +14,9 @@ This project was also my capstone during maternity leave — a hands-on way to a
 
 I built this together with [Claude](https://claude.ai), Anthropic's AI assistant, and part of the point was to find out how far I could get working that way.
 
-**What I did.** I wrote the requirements: the user stories and acceptance criteria, including the performance, security and privacy story, and the purpose behind them. I decided where the lines are, and I questioned Claude's designs whenever they crossed one. I ran everything on the robot with a real phone and a real browser, and I decided what counted as done.
+**What I did.** I defined what Lola-Bla has to do and what it must never do: the user stories, the acceptance criteria and the safety and privacy rules. I required a specification for every step and an architecture before any code, and I approved each one before it was built. I questioned Claude's designs whenever they crossed one of my lines, ran everything on the robot with a real phone and a real browser, and decided what counted as done.
 
-**What Claude did.** It drafted designs, code, tests and documentation, explained the options, and checked its own work against the output I pasted back from the robot.
+**What Claude did.** Claude wrote the specifications and the design options for me to approve, and then the code, the tests and the documentation. It explained the options and checked its own work against the output I pasted back from the robot. I did not write the code, and I did not learn to write specifications myself: I asked for them, and I kept asking for them.
 
 **Where I pushed back, and the design changed**
 
@@ -25,12 +25,16 @@ I built this together with [Claude](https://claude.ai), Anthropic's AI assistant
 - I proposed building child safety into the personality of the one agent that talks to the child, instead of a second checking agent, which cannot sit in the middle of a real-time stream.
 - I asked for an audit trail, a password-protected console with the password recovery handled on the Pi, and the docs updated in the same step as each piece of code, instead of afterwards.
 
-**What I learned**
+**How I steered the work** (these were my instructions from the start, not lessons I picked up along the way)
 
-- **Spec first, then build, then docs in the same step.** When I let the docs slip, they fell behind within days.
-- **Small steps, each verified.** Every piece was tested on its own (offline tests with fakes, then the real thing) before the next one was built on top.
+- **Specification first, then design, then code.** I told Claude I wanted the user stories and acceptance criteria agreed before anything was built, and an architecture before the implementation. I kept to this even though it takes much longer.
+- **Safety by design, not by accident.** I asked for safety to be part of the structure from the start: data and secrets live outside the repo so they cannot be committed by accident, a scan runs before every push, and the cloud AI only sees what it needs.
+- **Small steps, each verified.** Every piece is tested on its own (offline tests with fakes, then the real thing) before the next one is built on top, and I check the output of every step.
+- **The documentation moves with the code.** At one point the docs had fallen behind, because Claude kept putting them off until a later commit. I told it to update the docs in the same step as the code, and it has worked that way since.
+
+**What I observed along the way**
+
 - **The assistant makes mistakes, and the process catches them.** A security header made the console refuse every sign-in (found in a real browser, now pinned by a test). Asking for the group "Test" also played "Another test" (found in a live run). Messages were once marked as played when playback had failed. Nothing counted as done until it ran.
-- **Safety by structure, not by promise.** Data and secrets live outside the repo so they cannot be committed by accident, and a scan runs before every push.
 - **It only knows what I show it.** Claude cannot see my screen or my robot. Everything it knew about what actually happened came from the output I pasted back, so those pastes were part of the engineering.
 
 ## What it does
@@ -89,7 +93,7 @@ The script clones Pollen's app at the commit we run, applies our two-line patch,
    source ~/lola-bla-agents/venv/bin/activate
    python3 console/manage.py create-user
    python3 console/manage.py make-cert
-   python3 console/run.py
+   python3 console/run.py   # or keep it running as a service: ./console/install_service.sh (add --boot on to start it at boot)
    ```
 3. Give the messaging assistant its own Hugging Face token, in a file only you can read, and log in to Hugging Face for the live conversation:
    ```bash
@@ -109,6 +113,7 @@ The script clones Pollen's app at the commit we run, applies our two-line patch,
 - The console cannot yet unlink Signal, manage groups and contacts, or show logs: approvals are still managed by hand
 - The console password minimum is short on purpose (5 characters); the sign-in lockout (5 tries, 15 minutes) is the protection
 - The messaging assistant needs Hugging Face credits; without them a simple local fallback keeps messaging working
+- Not yet a Reachy Mini app: it is installed by script and started by hand (see docs/architecture/publishing.md)
 - The live conversation's cloud service has no published data-retention statement that I could find (see the privacy section above)
 - Fixed maximum recording length (30s), with automatic stop after ~5 seconds of silence
 - Two small local patches to the underlying conversation engine are kept as a patch file (`app/patches`) and are not yet upstreamed

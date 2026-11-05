@@ -62,3 +62,13 @@ The Logs page shows the activity log and the audit log, read-only, with filters,
 | Setting | Purpose |
 |---|---|
 | `LOLA_TIMEZONE` | The time zone for displayed times (default `Europe/Berlin`) |
+
+## Step 12: running it as a service
+
+    ./console/install_service.sh              install and start it now (not at boot yet)
+    ./console/install_service.sh --boot on    start it at every boot
+    ./console/install_service.sh --boot off   do not start it at boot
+    ./console/install_service.sh --start | --stop | --status
+    ./console/install_service.sh --remove     undo it
+
+The service runs sandboxed and logs to the journal (`journalctl -u lola-console`). Details are in [docs/architecture/console.md](../docs/architecture/console.md).

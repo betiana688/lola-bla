@@ -65,7 +65,7 @@
 - The pip step of `app/install.sh` is untested. Daemon version mismatch (1.10.0 vs SDK 1.11.0) is still deferred.
 
 ### Security review: known and accepted for now (2026-11-04)
-- The Pi's SSH password is still the documented default. Revisit before publishing.
+- The Pi's SSH password is still the documented default, and `pollen` has sudo without a password, so anyone who gets in over SSH has full control. Accepted by the author for now; revisit before publishing. See the security review.
 - The console minimum password is 5 characters, by choice. The sign-in lockout (5 wrong tries, 15 minutes) is the protection.
 
 ### Console step 8 (2026-11-04)
@@ -105,3 +105,15 @@
 - Log retention: both logs only grow, but slowly: on 2026-11-04 the audit log had 132 rows since 25 September and the activity log 10 since 28 October. Not urgent. Decide later how long to keep entries and how to trim them safely; the console deliberately cannot delete them.
 - The mask on the Logs page is a safety net. If a real log line ever shows a number or an ID after masking, fix the code that wrote it.
 - Tried in a browser on 2026-11-04 on a copy of the database with the real logs, by the author's report: it looked right, and no full numbers or IDs were seen.
+
+### Security review (2026-11-04, first pass)
+- See [security-review.md](reference/security-review.md). To check: the programs behind ports 8443 and 33785, whether the daemon on port 8000 asks for a login, SSH password logins and any firewall rules, a vulnerability scan of the Python packages.
+- Regular database backup (daily, keep 14, owner-only). The Signal keys and the audio are deliberately not part of it.
+- The console's certificate expires on 4 November 2027. Renew it with `python3 console/manage.py make-cert` and restart the service.
+- The Pi's time zone is Europe/London. Harmless for the console (it has its own setting) but worth setting to Berlin for consistency.
+
+### Publishing as a Reachy Mini app (2026-11-04)
+- The author plans to publish Lola-Bla as a Reachy Mini app later. What that takes, and the decisions to make first, are in [publishing.md](architecture/publishing.md).
+- Start at boot for the robot app is the daemon's `--startup-app` setting, once Lola-Bla is an installed app. No systemd service for it.
+- Whether the dashboard's settings icon can point at an https console with a self-signed certificate. To test.
+- Whether the background sync stops cleanly when the app is stopped. To check.
