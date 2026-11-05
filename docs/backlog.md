@@ -157,3 +157,7 @@
 - [x] R5 space: done 2026-11-05, 3.3 GB free (76%). See docs/architecture/disk-space.md.
 - [ ] R5 follow-up: check if whisper-tiny.en and other apps' HF spaces can go (ask first).
 - [ ] After R6: re-check that /var/swap is still 512 MiB and the drop-in survived.
+
+- [x] R6 robot update 1.10.0 -> 1.14.0: done 2026-11-05, see docs/architecture/robot-update-r6.md.
+- [ ] R1 acceptance: app stays running more than 5 min with Control open (retest of the 62 s stop).
+- [ ] Later: delete the pre-R6 backup on the robot after a few stable days.
