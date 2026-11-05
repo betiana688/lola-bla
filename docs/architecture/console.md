@@ -235,3 +235,13 @@ The console follows the Lola-Bla brand ([docs/brand](../brand/README.md)): banan
 - The fonts, mark and icon are copies of the files in `docs/brand/`, served from the console itself, so a page load never contacts a third party. The CSP gained `font-src 'self'` and nothing else. A test fails if a copy differs from `docs/brand/`.
 - Two choices outside the brand tokens, both for contrast: error badges use a deep red (`#B3261E`) on light and a soft red (`#FF9A90`) on dark, and the dark theme keeps the primary button violeta with crema text, because crema on the lighter dark-mode violeta is below 4.5:1.
 - `tests/test_style.py` checks every text and background pair of both themes for a contrast of at least 4.5:1, and that the CSS has no gradient, shadow or external address.
+
+## Running inside a Reachy Mini app (R2, step 1, 2026-11-05)
+
+`lola_console/server.py` holds `serve(stop_event, ...)`. It starts the HTTPS console and blocks until the event is set, then shuts down and frees the port, so an app's `run()` can start the console and stop it when the daemon stops the app. `run.py` is now a thin wrapper: it turns Ctrl+C and the service's stop signal into that event and prints the address and certificate fingerprint.
+
+- `serve()` raises `ServeError` with a plain message (no certificate, no console user, port in use, stopped unexpectedly). Only `run.py` turns that into an exit message.
+- The port, certificate folder and database stay where they were: `LOLA_CONSOLE_PORT` (default 9443), `~/.config/lola-bla/tls`, the existing database.
+- Not changed: sign-in, sessions, passwords, headers. The systemd service still starts `run.py`.
+- Next: the app side (`dont_start_webserver = True`, `custom_app_url` as a plain string in `main.py`) comes with the launcher experiment (R4) and packaging (R1). Fallback if Reachy Mini Control will not open a self-signed https page: a small launch page that links to the console.
+- `tests/test_server.py` covers: answering over HTTPS, stopping on the event with the port freed, starting again, and the clear refusals.
