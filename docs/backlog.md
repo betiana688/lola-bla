@@ -150,3 +150,6 @@
 - R5: disk is at 90% (1.4 GB free) after the 406 MB apps environment; plan space before the real app is installed.
 - Privacy and security check: the service's Central Relay and TURN requests (every 30 to 60 s, both failing); find out what they send and whether Lola's robot should have them off.
 - Remove the POC when done (see docs/architecture/reachy-app-poc.md).
+- After R6: retest the "Control stops an app after about 62 s" behavior with updated robot and Control.
+- Privacy check: "Share anonymous usage data" is on in Control; decide for Lola's robot.
+- R5: find out what "Clear HuggingFace Cache" would delete before using it.
