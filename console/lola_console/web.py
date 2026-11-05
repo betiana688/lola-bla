@@ -833,15 +833,27 @@ STARTUP_NOTICES = {
     "startup_unreachable": "Could not reach the robot service right now. Nothing changed.",
     "startup_failed": "The robot service did not accept the change. Nothing changed.",
     "startup_nothing": "Nothing to do.",
+    "startup_wrong_password": "The password is wrong. Nothing changed.",
+    "startup_locked": "Too many wrong passwords. Sign-in is locked for a while. Nothing changed.",
 }
 
 
 async def startup_post(request):
-    """Turn "start Lola-Bla when the robot wakes up" on or off. One click, no password, but the
-    usual origin check, sign-in and CSRF token apply, and every change is audited."""
+    """Turn "start Lola-Bla when the robot wakes up" on or off. Asks for the password again (a wrong
+    change could break how the robot behaves); the usual origin check, sign-in and CSRF token apply too,
+    and every change is audited."""
     user, form, refused = await _group_post(request)
     if refused:
         return refused
+    con = _connect(request)
+    try:
+        problem = await _reauthenticate(con, user, str(form.get("password", "")),
+                                        f"console:{user['username']}", what="startup")
+    finally:
+        con.close()
+    if problem:
+        code = "startup_locked" if problem.startswith("Too many") else "startup_wrong_password"
+        return RedirectResponse("/?notice=" + code, status_code=303)
     result = await run_in_threadpool(startup.change, request.app.state.daemon, str(form.get("action", "")))
     if result["changed"] or result["error"]:
         con = _connect(request)

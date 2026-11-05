@@ -172,3 +172,7 @@ details:not(.item) > summary { min-height: 44px; padding: 0.5rem 0; font-weight:
 .danger-row form { margin: 0; }
 .danger button { margin: 0; border-color: var(--error); }
 .danger button:hover { background: var(--error); color: var(--on-error); }
+
+/* danger zone with password */
+.danger-row { display: block; }
+.danger-row form { margin-top: 1rem; }

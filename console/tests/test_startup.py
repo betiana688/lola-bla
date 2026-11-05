@@ -11,8 +11,8 @@ from starlette.testclient import TestClient
 
 from lola_console import daemon_api, startup
 from lola_console.daemon_api import APP_NAME, DaemonClient, DaemonError
-from lola_console.web import create_app
-from tests.test_web import CSRF_RE, SECRET, WebBase, setUpModule, tearDownModule  # noqa: F401
+from lola_console.web import MAX_FAILED, create_app
+from tests.test_web import CSRF_RE, PW, SECRET, WebBase, setUpModule, tearDownModule  # noqa: F401
 
 NOBODY = "http://127.0.0.1:1"
 
@@ -182,8 +182,8 @@ class Switch(WebBase):
     def token(self):
         return CSRF_RE.search(self.client.get("/").text).group(1)
 
-    def post(self, action, **kw):
-        return self.client.post("/startup", data={"action": action, "csrf": self.token()}, **kw)
+    def post(self, action, password=PW, **kw):
+        return self.client.post("/startup", data={"action": action, "csrf": self.token(), "password": password}, **kw)
 
     def audit_ops(self):
         return [r[0] for r in self.row("SELECT operation FROM audit_log")]
@@ -286,10 +286,34 @@ class WhenTheRobotServiceIsDown(WebBase):
     def test_a_change_is_reported_and_logged(self):
         self.login()
         token = CSRF_RE.search(self.client.get("/").text).group(1)
-        r = self.client.post("/startup", data={"action": "on", "csrf": token})
+        r = self.client.post("/startup", data={"action": "on", "csrf": token, "password": PW})
         self.assertEqual(r.headers["location"], "/?notice=startup_unreachable")
         self.assertTrue(self.row("SELECT 1 FROM log_entries WHERE event_type = 'startup_error'"))
         self.assertFalse(self.row("SELECT 1 FROM audit_log WHERE operation LIKE 'startup_%'"))
+
+
+class Password(Switch):
+    def test_wrong_password_changes_nothing(self):
+        r = self.post("on", password="not-the-password")
+        self.assertEqual(r.headers["location"], "/?notice=startup_wrong_password")
+        self.assertEqual(self.stub.puts, [])
+        self.assertTrue(any("password_failed" in op for op in self.audit_ops()))
+
+    def test_no_password_changes_nothing(self):
+        r = self.client.post("/startup", data={"action": "on", "csrf": self.token()})
+        self.assertEqual(r.headers["location"], "/?notice=startup_wrong_password")
+        self.assertEqual(self.stub.puts, [])
+
+    def test_the_home_page_asks_for_the_password(self):
+        self.assertIn('name="password"', self.client.get("/").text.split("danger zone")[1])
+
+    def test_too_many_wrong_passwords_lock_it_even_for_the_right_one(self):
+        for _ in range(MAX_FAILED):
+            r = self.post("on", password="wrong-one")
+        self.assertEqual(r.headers["location"], "/?notice=startup_locked")
+        r = self.post("on")
+        self.assertEqual(r.headers["location"], "/?notice=startup_locked")
+        self.assertEqual(self.stub.puts, [])
 
 
 if __name__ == "__main__":
