@@ -117,3 +117,13 @@
 - Start at boot for the robot app is the daemon's `--startup-app` setting, once Lola-Bla is an installed app. No systemd service for it.
 - Whether the dashboard's settings icon can point at an https console with a self-signed certificate. To test.
 - Whether the background sync stops cleanly when the app is stopped. To check.
+
+### Roadmap ideas (2026-11-04), to prioritise
+- R1: Package Lola-Bla as a Reachy Mini app, which gives Run and Stop in Reachy Mini Control, the startup setting, install and remove. Large. See [publishing.md](architecture/publishing.md).
+- R2: The console as the app's settings page (`custom_app_url`). Open: https with a self-signed certificate, and whether Reachy Mini Control opens it. Medium, with unknowns.
+- R3: A toggle in the console for "start Lola-Bla when the robot wakes up", using the daemon's startup setting. Small, after checking that this daemon has the endpoint.
+- R4: An interim launcher app for Run and Stop in Reachy Mini Control before R1. An experiment: can a second connection to the daemon coexist with the launcher's?
+- R5: Measure the install size and the free space, and test two apps side by side. By the author's experience the robot has room for about two apps.
+- R6: Decide about the version gap: SDK 1.11.0, daemon 1.10.0, documentation 1.13.
+- R7: Start from the official `conversation` template, or keep Pollen's app and load the Lola-Bla tool and profile as external ones (can the two-line patch go away?).
+- R8: Security: the daemon on port 8000 shows no login in the documentation, so nothing the console adds (such as the toggle in R3) may widen that.

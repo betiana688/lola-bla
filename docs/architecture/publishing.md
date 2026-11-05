@@ -51,3 +51,22 @@ To remove everything for good, in this order: unlink from the console (so the ro
 - [Reachy Mini documentation: building and publishing apps](https://huggingface.co/docs/reachy_mini/main/SDK/apps)
 - [Seeed wiki: Reachy Mini apps](https://wiki.seeedstudio.com/reachymini_sdk_apps/)
 - [Seeed wiki: development workflow for the wireless Reachy Mini](https://wiki.seeedstudio.com/reachymini_platforms_reachy_mini_development_workflow)
+
+## Turning the app on and off, and starting it at boot (second look, same day)
+
+Pollen's documentation (the `main` version, newer than the SDK on the author's robot) describes both a visual and a command-line way, for installed apps:
+
+- Reachy Mini Control (the desktop and phone app) has an Applications tab where apps are installed, started and stopped. It opens an app's settings page (`custom_app_url`) as soon as that page answers.
+- The daemon's REST API on port 8000 does the same by command: install, start, stop, list the installed apps, show which app runs now, remove and update.
+- Starting at wake-up is a setting that can be read, set and cleared at any time (`GET` and `PUT /api/apps/startup-app`). The app starts after wake-up, or when an antenna is touched on a sleeping robot, and only when no other app holds the app slot. Pointing it at another app, or clearing it, is the configurable boot start.
+- For runtime configuration such as keys and server addresses, the documentation recommends the app's own web page, which is what the console is. The app's process inherits the daemon's environment and there is no other way to inject settings.
+- There is an official `conversation` template for `reachy-mini-app-assistant create`, with audio, LLM tools and motion built in. It is an alternative to forking Pollen's conversation app.
+- Pollen's conversation app can load profiles and tools from outside its own code (its README describes an external profiles folder, an external tools folder and an autoload switch), so Lola-Bla's tool and profile might live outside Pollen's package. The two-line patch is not covered by this. To check.
+
+What follows from it:
+
+1. No systemd service for the robot app. Packaging it gives Run and Stop in Reachy Mini Control and the startup setting for free.
+2. The console becomes the app's settings page. It could carry a toggle for "start Lola-Bla when the robot wakes up" that calls the daemon's startup setting, with no system rights. To check first: that the daemon on this robot (SDK 1.11.0, daemon 1.10.0) has these endpoints, because the documentation describes newer versions.
+3. Open question: the framework serves a settings page over plain HTTP on the home network, while the console needs HTTPS because of its password sign-in. Whether `custom_app_url` can point at an https address with a self-signed certificate, and whether Reachy Mini Control opens such a page, is to test. Until then the console's own address stays the way in.
+4. Until the app is packaged there is no visual on/off for Lola-Bla. The stopgap is the commands in `console/install_service.sh` and the steps above. A middle option is a small launcher app that starts Lola-Bla from its own environment and stops it on the `stop_event`. It is an experiment: it is not known whether the daemon allows a second connection to the robot while the launcher holds one.
+5. Space on the robot is tight. By the author's experience it has room for about two apps. Keeping Pollen's conversation app installed next to Lola-Bla is treated as an edge case. A fork would double its code, while a dependency shares one copy.
