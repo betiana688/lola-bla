@@ -1,5 +1,7 @@
 # Lola-Bla
 
+![Lola-Bla: talk to abuelo without a phone](docs/brand/banner.png)
+
 A Reachy Mini robot that lets a young child hear and send voice messages to family abroad — safely, and entirely on her own.
 
 ## Why I built this
@@ -130,6 +132,7 @@ console/          Configuration console (Story 3)
 prototype/        First, fully local version (superseded, kept for reference)
 profiles/lola/    The conversational agent's personality and safety profile
 docs/             Requirements, architecture, references
+docs/brand/       Logo, app icon, colours, fonts and posters
 ```
 
 ## License
