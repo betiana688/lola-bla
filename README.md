@@ -2,7 +2,7 @@
 
 ![Lola-Bla: talk to abuelo without a phone](docs/brand/banner.png)
 
-A Reachy Mini robot that lets a young child hear and send voice messages to family abroad — safely, and entirely on her own.
+An app for the Reachy Mini robot that lets a young child hear and send voice messages to family abroad — safely, and entirely on her own.
 
 ## Why I built this
 
