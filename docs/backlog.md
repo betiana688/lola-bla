@@ -139,3 +139,7 @@
 - The daemon runs from `/venvs/mini_daemon` (Python 3.12). `/venvs/apps_venv` does not exist on this robot yet; the apps environment is created when the first app is installed.
 - Disk: 2.0 GB free of 14 GB (86% used). Our environment 361 MB, the conversation app clone 51 MB, this repository 8 MB.
 - The daemon on this robot has `startup-app`, `restart-current-app`, `start-app/{name}/no-evict`, `install-private-space` and `check-updates` routes, so the R3 toggle is possible.
+
+### R3 built (2026-11-05)
+- The start-at-wake-up switch is built and tested against a stand-in robot service. To try it for real, Lola-Bla must first be an installed Reachy Mini app (R4 or R1); until then the card says it is not installed.
+- Then to test live: turn it on, restart the robot, see that Lola-Bla starts; turn it off and check again. Also check what happens with another app set as the startup app.

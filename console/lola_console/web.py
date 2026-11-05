@@ -24,7 +24,7 @@ from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-from . import auth, contactadmin, groupadmin, link, logview, signal_api, users
+from . import auth, contactadmin, daemon_api, groupadmin, link, logview, signal_api, startup, users
 from .sessions import SESSION_SECONDS, Signer, load_or_create_secret
 
 BASE = Path(__file__).parent
@@ -242,7 +242,9 @@ async def home(request):
     user = _current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
-    notice = "Password changed. Any other sign-ins have ended." if request.query_params.get("notice") == "password_changed" else None
+    code = request.query_params.get("notice")
+    notice = STARTUP_NOTICES.get(code) or ("Password changed. Any other sign-ins have ended." if code == "password_changed" else None)
+    startup_state = await run_in_threadpool(startup.get_state, request.app.state.daemon)
     con = _connect(request)
     try:
         account = con.execute("SELECT status FROM accounts LIMIT 1").fetchone()
@@ -255,7 +257,8 @@ async def home(request):
     return templates.TemplateResponse(request, "home.html", {
         "username": user["username"], "csrf": user["csrf"],
         "account_status": account[0] if account else "none",
-        "groups": groups, "contacts": contacts, "failures": failures, "notice": notice})
+        "groups": groups, "contacts": contacts, "failures": failures, "notice": notice,
+        "startup": startup_state})
 
 
 async def logout(request):
@@ -821,7 +824,40 @@ async def logs_get(request):
     return templates.TemplateResponse(request, "logs.html", data)
 
 
-def create_app(db_path=None, secret=None, allowed_hosts=None, signal_client=None, device_name=None):
+STARTUP_NOTICES = {
+    "startup_on": "lola-bla will start when the robot wakes up.",
+    "startup_off": "lola-bla will no longer start by itself when the robot wakes up.",
+    "startup_already_on": "It was already on. Nothing changed.",
+    "startup_already_off": "It was already off, or another app owns this setting. Nothing changed.",
+    "startup_not_installed": "Lola-Bla is not installed as a Reachy Mini app yet. Nothing changed.",
+    "startup_unreachable": "Could not reach the robot service right now. Nothing changed.",
+    "startup_failed": "The robot service did not accept the change. Nothing changed.",
+    "startup_nothing": "Nothing to do.",
+}
+
+
+async def startup_post(request):
+    """Turn "start Lola-Bla when the robot wakes up" on or off. One click, no password, but the
+    usual origin check, sign-in and CSRF token apply, and every change is audited."""
+    user, form, refused = await _group_post(request)
+    if refused:
+        return refused
+    result = await run_in_threadpool(startup.change, request.app.state.daemon, str(form.get("action", "")))
+    if result["changed"] or result["error"]:
+        con = _connect(request)
+        try:
+            with con:
+                if result["changed"]:
+                    _audit(con, f"console:{user['username']}", user["id"], result["audit"])
+                if result["error"]:
+                    _activity(con, "startup_error", result["error"])
+        finally:
+            con.close()
+    return RedirectResponse("/?notice=" + result["notice"], status_code=303)
+
+
+def create_app(db_path=None, secret=None, allowed_hosts=None, signal_client=None, device_name=None,
+               daemon_client=None):
     middleware = [Middleware(SecurityHeaders)]
     if allowed_hosts:
         middleware.insert(0, Middleware(TrustedHostMiddleware, allowed_hosts=list(allowed_hosts)))
@@ -850,12 +886,14 @@ def create_app(db_path=None, secret=None, allowed_hosts=None, signal_client=None
         Route("/contacts/rename", contacts_rename_post, methods=["POST"]),
         Route("/contacts/remove", contacts_remove_post, methods=["POST"]),
         Route("/logs", logs_get, methods=["GET"]),
+        Route("/startup", startup_post, methods=["POST"]),
         Mount("/static", StaticFiles(directory=str(BASE / "static")), name="static"),
     ]
     app = Starlette(routes=routes, middleware=middleware)
     app.state.db_path = Path(db_path) if db_path else users.db_path()
     app.state.signer = Signer(secret if secret is not None else load_or_create_secret())
     app.state.signal = signal_client if signal_client is not None else signal_api.SignalApi()
+    app.state.daemon = daemon_client if daemon_client is not None else daemon_api.DaemonClient()
     app.state.device_name = device_name or os.environ.get("LOLA_DEVICE_NAME") or link.DEVICE_NAME
     app.state.link = None
     app.state.flash = None

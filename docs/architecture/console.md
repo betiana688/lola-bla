@@ -245,3 +245,13 @@ The console follows the Lola-Bla brand ([docs/brand](../brand/README.md)): banan
 - Not changed: sign-in, sessions, passwords, headers. The systemd service still starts `run.py`.
 - Next: the app side (`dont_start_webserver = True`, `custom_app_url` as a plain string in `main.py`) comes with the launcher experiment (R4) and packaging (R1). Fallback if Reachy Mini Control will not open a self-signed https page: a small launch page that links to the console.
 - `tests/test_server.py` covers: answering over HTTPS, stopping on the event with the port freed, starting again, and the clear refusals.
+
+## Start at wake-up: the danger zone (R3, 2026-11-05)
+
+The home page ends with a "danger zone" card holding one switch: start Lola-Bla when the robot wakes up. The setting lives in the robot service (the Reachy Mini daemon, `GET` and `PUT /api/apps/startup-app`); the console only reads and changes it, and keeps no copy.
+
+- One click, no password (the author's choice). The usual protections still apply: sign-in, CSRF token, Origin check. Every change is written to the audit log as `startup_on` or `startup_off`; a failed change is written to the activity log as `startup_error`. No secrets are involved.
+- The console talks only to `127.0.0.1:8000`. The address is fixed in code (`daemon_api.py`) and there is no setting or environment variable for it, so the console cannot be pointed at anything else. It opens no new port and adds nothing to what the robot service already allows (backlog R8).
+- States: not installed (no button), off, on, another app owns the setting (turning on replaces it and says so; turning off never clears another app's entry), robot service unreachable (no button, nothing changes).
+- The robot service only accepts an app that is installed, so the switch can only be used for real once Lola-Bla is an installed Reachy Mini app (R4 or R1). The app name is one constant, `APP_NAME` in `daemon_api.py`.
+- `tests/test_startup.py` runs against a stand-in robot service on a temporary port: the client, every state, exactly one call per change, nothing sent when it should not be, and the route's refusals.

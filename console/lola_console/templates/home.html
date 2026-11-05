@@ -19,4 +19,29 @@
   <input type="hidden" name="csrf" value="{{ csrf }}">
   <button type="submit" class="secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>sign out</button>
 </form>
+{% if startup %}
+<section class="danger" aria-labelledby="danger-title">
+  <h2 id="danger-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg>danger zone</h2>
+  <div class="danger-row">
+    <div>
+      <p><strong>start lola-bla when the robot wakes up</strong></p>
+      <p class="muted">{{ startup.text }}</p>
+    </div>
+    {% if startup.can_turn_on %}
+    <form method="post" action="/startup">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="action" value="on">
+      <button type="submit" class="secondary">{{ "turn on (replaces it)" if startup.state == "other" else "turn on" }}</button>
+    </form>
+    {% endif %}
+    {% if startup.can_turn_off %}
+    <form method="post" action="/startup">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="action" value="off">
+      <button type="submit" class="secondary">turn off</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
 {% endblock %}
