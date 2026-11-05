@@ -40,7 +40,7 @@ LIGHT = variables(block(CSS, ":root"))
 DARK = {**LIGHT, **variables(block(CSS, "@media (prefers-color-scheme: dark)"))}
 PAIRS = [("ink", "card"), ("ink", "page"), ("ink", "field"), ("muted", "card"), ("link", "card"),
          ("error", "card"), ("on-error", "error"), ("btn-text", "btn-bg"), ("header-ink", "header-bg"),
-         ("notice-ink", "notice-bg"), ("ink", "banana"), ("berenjena", "banana")]
+         ("notice-ink", "notice-bg"), ("focus-ink", "focus-bg"), ("ink", "banana"), ("berenjena", "banana")]
 
 
 class Contrast(unittest.TestCase):

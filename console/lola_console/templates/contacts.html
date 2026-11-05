@@ -38,5 +38,5 @@
 <p>No contacts approved in this group yet.</p>
 {% endfor %}
 <p><a href="/contacts/add?group={{ group.id | urlencode }}">Add a contact</a></p>
-<p><a href="/groups">Back to groups</a></p>
+<p class="back"><a class="button" href="/groups">&larr; Back to groups</a></p>
 {% endblock %}

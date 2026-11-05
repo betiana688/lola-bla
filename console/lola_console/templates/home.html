@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Lola-Bla console{% endblock %}
+{% block nav %}{% endblock %}
 {% block body %}
 <h1>hola, <em>{{ username }}</em></h1>
 {% if notice %}<p class="notice" role="status">{{ notice }}</p>{% endif %}
@@ -9,10 +10,12 @@
   <dt>approved contacts</dt><dd>{{ contacts }}</dd>
   <dt>failures in the last 24 hours</dt><dd><a href="/logs?view=activity&amp;status=failed&amp;period=1d">{{ failures }}</a></dd>
 </dl>
-<p><a href="/groups">groups</a></p>
-<p><a href="/logs">logs</a></p>
-<p><a href="/signal">signal account</a></p>
-<p><a href="/password">change password</a></p>
+<nav class="tiles">
+  <a class="button" href="/groups">groups</a>
+  <a class="button" href="/logs">logs</a>
+  <a class="button" href="/signal">signal account</a>
+  <a class="button" href="/password">change password</a>
+</nav>
 <form method="post" action="/logout">
   <input type="hidden" name="csrf" value="{{ csrf }}">
   <button type="submit" class="secondary">sign out</button>
