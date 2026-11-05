@@ -131,4 +131,4 @@
 ### README and publishing ideas (2026-11-05)
 - README: include the most important architecture diagrams (the current Mermaid versions, not the old PNGs in `docs/architecture/images/`).
 - README: a video of Reachy with the app working.
-- Safening of the app, before publishing: security hardening and child safety together. Starts from the security review and the final cybersec recheck at the end of the roadmap (ports, SSH, passwordless sudo, firewall, vulnerability scan, daemon API without a login, app lifecycle) and from "Deeper safety hardening" under General.
+- Safening of the app, before publishing: cybersecurity and data privacy. Starts from the security review and the final cybersec recheck at the end of the roadmap (ports, SSH, passwordless sudo, firewall, vulnerability scan, daemon API without a login, app lifecycle) and from "Deeper safety hardening" under General.
