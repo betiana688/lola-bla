@@ -127,3 +127,8 @@
 - R6: Decide about the version gap: SDK 1.11.0, daemon 1.10.0, documentation 1.13.
 - R7: Start from the official `conversation` template, or keep Pollen's app and load the Lola-Bla tool and profile as external ones (can the two-line patch go away?).
 - R8: Security: the daemon on port 8000 shows no login in the documentation, so nothing the console adds (such as the toggle in R3) may widen that.
+
+### README and publishing ideas (2026-11-05)
+- README: include the most important architecture diagrams (the current Mermaid versions, not the old PNGs in `docs/architecture/images/`).
+- README: a video of Reachy with the app working.
+- Safening of the app, before publishing: security hardening and child safety together. Starts from the security review and the final cybersec recheck at the end of the roadmap (ports, SSH, passwordless sudo, firewall, vulnerability scan, daemon API without a login, app lifecycle) and from "Deeper safety hardening" under General.
