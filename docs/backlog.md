@@ -143,3 +143,10 @@
 ### R3 built (2026-11-05)
 - The start-at-wake-up switch is built and tested against a stand-in robot service. To try it for real, Lola-Bla must first be an installed Reachy Mini app (R4 or R1); until then the card says it is not installed.
 - Then to test live: turn it on, restart the robot, see that Lola-Bla starts; turn it off and check again. Also check what happens with another app set as the startup app.
+
+## From the POC (2026-11-05)
+- Phase B: run the console from inside the app (`serve(stop_event)`), HTTPS `custom_app_url`, clean stop.
+- R6: update the robot (service and SDK together) to the latest version; then test the apps environment at the new version.
+- R5: disk is at 90% (1.4 GB free) after the 406 MB apps environment; plan space before the real app is installed.
+- Privacy and security check: the service's Central Relay and TURN requests (every 30 to 60 s, both failing); find out what they send and whether Lola's robot should have them off.
+- Remove the POC when done (see docs/architecture/reachy-app-poc.md).

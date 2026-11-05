@@ -316,5 +316,10 @@ class Password(Switch):
         self.assertEqual(self.stub.puts, [])
 
 
+class Hint(Switch):
+    def test_the_home_page_explains_how_it_starts(self):
+        self.assertIn("touch an antenna", self.client.get("/").text)
+
+
 if __name__ == "__main__":
     unittest.main()

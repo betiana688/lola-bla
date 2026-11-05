@@ -255,3 +255,7 @@ The home page ends with a "danger zone" card holding one switch: start Lola-Bla 
 - States: not installed (no button), off, on, another app owns the setting (turning on replaces it and says so; turning off never clears another app's entry), robot service unreachable (no button, nothing changes).
 - The robot service only accepts an app that is installed, so the switch can only be used for real once Lola-Bla is an installed Reachy Mini app (R4 or R1). The app name is one constant, `APP_NAME` in `daemon_api.py`.
 - `tests/test_startup.py` runs against a stand-in robot service on a temporary port: the client, every state, exactly one call per change, nothing sent when it should not be, and the route's refusals.
+
+## How the startup app really starts
+
+Found with the proof of concept: see `reachy-app-poc.md`. The robot boots asleep; the startup app starts when the robot is woken up or when an antenna is touched, never at power-on. The home page says so under the switch.

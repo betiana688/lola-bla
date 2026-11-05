@@ -25,6 +25,7 @@
   <div class="danger-row">
     <p><strong>start lola-bla when the robot wakes up</strong></p>
     <p class="muted">{{ startup.text }}</p>
+    <p class="muted">the robot always starts asleep. to start lola-bla, touch an antenna or wake the robot in reachy mini control.</p>
     {% if startup.can_turn_on or startup.can_turn_off %}
     <form method="post" action="/startup">
       <input type="hidden" name="csrf" value="{{ csrf }}">
