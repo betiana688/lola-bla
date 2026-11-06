@@ -24,3 +24,24 @@ Stop the app, remove `lola_bla` through the service (`POST /api/apps/remove/lola
 - **Control's Settings page:** System Update offers the robot software 1.10.0 to 1.14.0 (R6). "Reset Apps Cache" uninstalls all apps. "Clear HuggingFace Cache" removes cached models (candidate for R5, check what first). "Share anonymous usage data" is on (privacy check).
 - **Service log noise:** Hugging Face app listing fails with 401 (stored token), the Central Relay fails every minute, TURN credentials fail every 30 s (expired certificate on turn.fastrtc.org).
 - **The POC was closed on 2026-11-05:** switch turned off in the console, app removed through the service (`POST /api/apps/remove/lola_bla`), database copy and log deleted. The apps environment was kept for the real app.
+
+## Root cause of the 60 s stop (2026-11-06)
+
+Reachy Mini Control (0.9.34 and 0.9.38) stops an app when it cannot reach the app's web address
+(`custom_app_url`). After the start, Control probes the address; if no probe succeeds within about 60 s it
+calls `POST /api/apps/stop-current-app` (reachy-mini-desktop-app issue #272, PR #316 about malformed URLs).
+
+Evidence (daemon 1.14.0, Control 0.9.38):
+- https self-signed address (`https://reachy-mini.local:9443/`): stopped at exactly 60 s, every time.
+- No address (POC phase A) and `https://0.0.0.0:9444` (phase B1/B2): stopped.
+- Plain-http landing page answering HEAD and GET with 200, no redirect (`http://0.0.0.0:9080/`): ran 4 min
+  when started from Control. Control's probe arrived 5 s after the start (1 HEAD, 2 GET), then stopped probing.
+- Started from the robot with Control closed: never stopped (6 min, no request from other computers).
+
+Not explained: phase B3 (`http://0.0.0.0:8042`, the SDK's own page) was also stopped. Possibly that page does
+not answer HEAD with 200. Untested. Control's source was not read.
+
+Decision: `lola_bla` keeps a tiny landing page (`app/src/lola_bla/landing.py`, port 9080, `LOLA_LANDING_PORT`):
+static, no data, no login, link to the console. Remove it when Control no longer stops apps with an
+unreachable address (check issue #272 / PR #316). Rule for the family: Control stays closed anyway.
+Bug report filed with Pollen on 2026-11-06.

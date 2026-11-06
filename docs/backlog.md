@@ -161,3 +161,9 @@
 - [x] R6 robot update 1.10.0 -> 1.14.0: done 2026-11-05, see docs/architecture/robot-update-r6.md.
 - [ ] R1 acceptance: app stays running more than 5 min with Control open (retest of the 62 s stop).
 - [ ] Later: delete the pre-R6 backup on the robot after a few stable days.
+
+- [x] 60 s stop: root cause found (Control stops apps with an unreachable web address), landing page as workaround, bug filed. See docs/architecture/reachy-app-poc.md.
+- [ ] After a Control release that fixes #272: retest and decide whether to remove the landing page.
+- [ ] Privacy recheck: add port 9080 (landing page, static, no data) next to 9443; confirm nothing else listens (7860, 8042).
+- [ ] Camera: Control shows a live camera view; check whether the camera runs without Control (script 52), and what --no-camera really does under the daemon.
+- [ ] R1 acceptance still open: startup switch plus antenna touch with Control closed, restart test, removal test.
