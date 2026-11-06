@@ -4,15 +4,20 @@ Runs Pollen's conversation app with the Lola profile and the family console
 side by side. When the app is stopped, both shut down.
 """
 
-import os
 import sys
 import threading
+from pathlib import Path
 
 from reachy_mini import ReachyMini
+from reachy_mini_conversation_app import config as conv_config
 from reachy_mini_conversation_app.main import ReachyMiniConversationApp
 
 PROFILE = "lola"
 ROBOT_ARGS = ["--no-camera"]  # privacy by design: no camera in Lola's room
+
+
+class ProfileError(RuntimeError):
+    """The Lola profile is not the active one. The app must not run with another personality."""
 
 
 def say(text: str) -> None:
@@ -20,9 +25,20 @@ def say(text: str) -> None:
 
 
 def prepare_environment() -> None:
-    """Set the profile and the command line that the conversation app reads."""
-    os.environ["REACHY_MINI_CUSTOM_PROFILE"] = PROFILE
+    """Set the command line that the conversation app reads. The camera stays off."""
     sys.argv = [sys.argv[0], *ROBOT_ARGS]
+
+
+def ensure_profile() -> None:
+    """Make Lola's profile the active one, or refuse. A generic personality must never reach Lola."""
+    conv_config.set_custom_profile(PROFILE)
+    active = conv_config.config.REACHY_MINI_CUSTOM_PROFILE
+    if active != PROFILE:
+        raise ProfileError(f"active profile is {active!r}, expected {PROFILE!r}")
+    profile_file = Path(conv_config.config.PROFILES_DIRECTORY) / PROFILE / "profile.md"
+    if not profile_file.is_file():
+        raise ProfileError(f"profile file not found: {profile_file}")
+    say(f"profile {PROFILE} is active")
 
 
 def start_console(stop_event: threading.Event) -> threading.Thread:
@@ -49,6 +65,7 @@ class LolaBla(ReachyMiniConversationApp):
 
     def run(self, reachy_mini: ReachyMini, stop_event: threading.Event) -> None:
         prepare_environment()
+        ensure_profile()  # raises before the console or the microphone start
         console = start_console(stop_event)
         try:
             super().run(reachy_mini, stop_event)
