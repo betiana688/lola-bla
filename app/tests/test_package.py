@@ -25,7 +25,7 @@ DAEMON_PATTERN = r'custom_app_url\s*(?::\s*[^=]+)?\s*=\s*["\']([^"\']+)["\']'
 class DaemonContract(unittest.TestCase):
     def test_exactly_one_url_literal_for_the_daemon(self):
         found = re.findall(DAEMON_PATTERN, MAIN.read_text(encoding="utf-8"))
-        self.assertEqual(found, ["https://reachy-mini.local:9443/"])
+        self.assertEqual(found, ["http://0.0.0.0:9080/"])
 
     def test_no_settings_web_server(self):
         self.assertIs(LolaBla.dont_start_webserver, True)
@@ -88,14 +88,22 @@ class Lifecycle(unittest.TestCase):
         self.served = threading.Event()
         self.ended = threading.Event()
         self.app_ran = threading.Event()
+        self.landing_served = threading.Event()
+        self.landing_ended = threading.Event()
         patchers = (
             mock.patch.object(sys, "argv", ["lola_bla"]),
             mock.patch.dict(os.environ, {}),
             mock.patch.object(lola_main, "ensure_profile"),
+            mock.patch("lola_bla.landing.serve", new=self.fake_landing),
         )
         for p in patchers:
             p.start()
             self.addCleanup(p.stop)
+
+    def fake_landing(self, stop_event, **kwargs):
+        self.landing_served.set()
+        stop_event.wait(10)
+        self.landing_ended.set()
 
     def fake_serve(self, stop_event, **kwargs):
         self.served.set()
@@ -138,6 +146,26 @@ class Lifecycle(unittest.TestCase):
             time.sleep(0.1)
 
         self.run_app(fake_run, fake_serve=broken_serve)
+        self.assertTrue(self.app_ran.is_set())
+
+    def test_landing_page_stops_with_the_app(self):
+        def fake_run(app, robot, stop_event):
+            self.landing_served.wait(5)
+
+        self.run_app(fake_run)
+        self.assertTrue(self.landing_served.is_set())
+        self.assertTrue(self.landing_ended.is_set())
+
+    def test_app_keeps_running_if_the_landing_page_cannot_start(self):
+        def busy(stop_event, **kwargs):
+            raise OSError("port busy")
+
+        def fake_run(app, robot, stop_event):
+            self.app_ran.set()
+            time.sleep(0.1)
+
+        with mock.patch("lola_bla.landing.serve", new=busy):
+            self.run_app(fake_run)
         self.assertTrue(self.app_ran.is_set())
 
     def test_nothing_starts_if_the_profile_is_wrong(self):
