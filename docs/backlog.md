@@ -167,3 +167,4 @@
 - [ ] Privacy recheck: add port 9080 (landing page, static, no data) next to 9443; confirm nothing else listens (7860, 8042).
 - [ ] Camera: Control shows a live camera view; check whether the camera runs without Control (script 52), and what --no-camera really does under the daemon.
 - [ ] R1 acceptance still open: startup switch plus antenna touch with Control closed, restart test, removal test.
+- [ ] Privacy recheck: confirm the landing page (http, 9080) is not reachable from the internet (router) and still static.
