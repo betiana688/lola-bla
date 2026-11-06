@@ -182,3 +182,4 @@
 - [x] Docs, round 2 (2026-11-06, to be read through by the author): a short friendly guide for people with a Reachy Mini (what you need, set it up, link Signal and approve family, daily use, is it safe, fixing common problems), in `docs/use/`.
 - [ ] Make a short promo video for the app. Do not show the author's face.
 - [ ] GitHub settings for the public repo (author, a few clicks): secret scanning with push protection, Dependabot alerts, private vulnerability reporting (Settings, Code security). `SECURITY.md` and `.github/dependabot.yml` are in the repo.
+- [ ] Publishing: the two gaps in docs/architecture/publishing.md (dependencies not installable from outside, the patch on Pollen's app), the Space's `index.html`, then a private test release. Decided 2026-11-06: Apache-2.0, optional cloud assistant, private first.

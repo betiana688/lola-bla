@@ -138,4 +138,6 @@ docs/brand/       Logo, app icon, colours, fonts and posters
 
 ## License
 
-TBD.
+Apache-2.0, see [LICENSE](LICENSE). Copyright 2026 Betiana Felice.
+
+Lola-Bla builds on Pollen Robotics' Reachy Mini conversation app (also Apache-2.0). See [publishing](docs/architecture/publishing.md) for how that dependency is handled.

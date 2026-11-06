@@ -70,3 +70,10 @@ What follows from it:
 3. Open question: the framework serves a settings page over plain HTTP on the home network, while the console needs HTTPS because of its password sign-in. Whether `custom_app_url` can point at an https address with a self-signed certificate, and whether Reachy Mini Control opens such a page, is to test. Until then the console's own address stays the way in.
 4. Until the app is packaged there is no visual on/off for Lola-Bla. The stopgap is the commands in `console/install_service.sh` and the steps above. A middle option is a small launcher app that starts Lola-Bla from its own environment and stops it on the `stop_event`. It is an experiment: it is not known whether the daemon allows a second connection to the robot while the launcher holds one.
 5. Space on the robot is tight. By the author's experience it has room for about two apps. Keeping Pollen's conversation app installed next to Lola-Bla is treated as an edge case. A fork would double its code, while a dependency shares one copy.
+
+## Status on 2026-11-06
+
+- The package `lola_bla` has the right name, class and entry point. Pollen's checker (`reachy-mini-app-assistant check`) reports one thing missing: the Space's `index.html` landing page.
+- **Known gap, accepted for now:** `reachy-mini-conversation-app` and `lola-console` are not published on a package index, so the store cannot install Lola-Bla on someone else's robot yet. Today it installs from this repository on the author's robot only.
+- **Known gap, accepted for now:** Lola-Bla needs a small patch on Pollen's conversation app (`app/patches/`). It is applied by `app/install.sh`, not by the store. Options when this is tackled: get the change accepted upstream, or fork.
+- Decisions made: Apache-2.0 license; the cloud assistant stays optional (the local rules work without an account); the first release will be private, to test the whole path before anyone else sees it.
