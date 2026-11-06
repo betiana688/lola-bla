@@ -37,7 +37,7 @@ class SleepRobot(Tool):
 
     name = "sleep_robot"
     description = (
-        "Send Reachy to sleep. Two steps. Step 1: when someone clearly asks you to go to sleep or to stop for now, "
+        "Send Reachy to sleep. Works in Spanish, German and English (duérmete, vete a dormir, schlaf jetzt, geh schlafen, go to sleep). Two steps. Step 1: when someone clearly asks you to go to sleep or to stop for now, "
         "call with confirmed=false, then ask them if they want you to go to sleep and wait for the answer. "
         "Step 2: only after a clear yes, say a short goodnight and call with confirmed=true. If the answer is no or "
         "unclear, do not call again. Never use it for sleepy words in a story, a song or a game, for a goodnight "

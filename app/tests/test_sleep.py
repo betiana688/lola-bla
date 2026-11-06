@@ -103,6 +103,15 @@ class Profile(unittest.TestCase):
         self.assertIn("## SLEEP", self.text)
         self.assertIn("confirmed false", self.text)
 
+    def test_spanish_and_german_are_covered_for_the_request_the_question_and_the_answer(self):
+        for word in ("duérmete", "vete a dormir", "schlaf jetzt", "geh schlafen", "¿quieres que me duerma?",
+                     "möchtest du, dass ich schlafen gehe?", "sí", "vale", "ja", "nein", "buenas noches", "gute Nacht"):
+            self.assertIn(word, self.text, word)
+
+    def test_the_tool_description_names_all_three_languages(self):
+        for word in ("duérmete", "schlaf jetzt", "go to sleep"):
+            self.assertIn(word, sr.SleepRobot.description, word)
+
     def test_install_links_the_tool(self):
         self.assertIn("sleep_robot.py", (ROOT / "app" / "install.sh").read_text(encoding="utf-8"))
 
