@@ -21,12 +21,9 @@ None of this is sent to the cloud services. They are told only the outcome of an
 
 Details and sources: [cloud privacy check](../reference/cloud-privacy-check.md).
 
-## Things I know and have not solved yet
+## Still improving
 
-- The robot's own **system log, on the robot**, keeps the text of the conversation. It stays on the robot, and cutting it down is on my list.
-- Lola-Bla starts the app with the **camera off**, but Reachy Mini Control can still show the robot's camera when you open it. I am checking how to switch that off.
-- The robot ships with a documented default SSH password, and I have not changed it yet. The home network is assumed to be trusted. See the [security review](../reference/security-review.md).
-- The settings password can be as short as 5 characters on purpose. What protects it is the lockout: 5 wrong tries, then 15 minutes.
+I keep a list of privacy improvements and work through it before anything is published as an app. If you find something I missed, please tell me privately: see [SECURITY.md](../../SECURITY.md).
 
 ## How the settings are protected
 

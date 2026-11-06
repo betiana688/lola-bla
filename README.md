@@ -115,7 +115,6 @@ The script clones Pollen's app at the commit we run, applies our two-line patch,
 ## Known limitations
 
 - The console cannot yet unlink Signal, manage groups and contacts, or show logs: approvals are still managed by hand
-- The console password minimum is short on purpose (5 characters); the sign-in lockout (5 tries, 15 minutes) is the protection
 - The messaging assistant needs Hugging Face credits; without them a simple local fallback keeps messaging working
 - Not yet published: it runs as a Reachy Mini app (`lola_bla`) but is installed from this repo, not from the app store (see docs/architecture/publishing.md)
 - The live conversation's cloud service has no published data-retention statement that I could find (see the privacy section above)

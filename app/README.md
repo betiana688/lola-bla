@@ -48,7 +48,7 @@ See [docs/architecture/conversation-app.md](../docs/architecture/conversation-ap
 - Package in `app/` (`src/lola_bla`), console as package in `console/`. Installed editable into `/venvs/apps_venv`
   (`uv pip install -e` the conversation app clone, `console/` and `app/`), so `local_data` and `profiles` keep working.
 - The app sets the Lola profile with Pollen's own `set_custom_profile` and refuses to start if it is not active.
-- The camera flag `--no-camera` is passed to the conversation app (open question: Control still shows a camera view).
+- The camera flag `--no-camera` is passed to the conversation app.
 - Pollen's settings page without a login is switched off (`dont_start_webserver = True`).
 - Ports: 9443 console (https, login), 9080 landing page (plain http, static). Environment: `LOLA_CONSOLE_PORT`, `LOLA_LANDING_PORT`.
 - Do not start `lola_bla` from Control without the landing page: Control stops apps whose web address is unreachable.

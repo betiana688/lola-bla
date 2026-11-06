@@ -64,10 +64,6 @@
 - Offline tests for the existing code are still heredocs, not files.
 - The pip step of `app/install.sh` is untested. Daemon version mismatch (1.10.0 vs SDK 1.11.0) is still deferred.
 
-### Security review: known and accepted for now (2026-11-04)
-- The Pi's SSH password is still the documented default, and `pollen` has sudo without a password, so anyone who gets in over SSH has full control. Accepted by the author for now; revisit before publishing. See the security review.
-- The console minimum password is 5 characters, by choice. The sign-in lockout (5 wrong tries, 15 minutes) is the protection.
-
 ### Console step 8 (2026-11-04)
 - Adopt an existing Signal account: if the Signal API already has an account that the database does not know, the Signal page shows "A different account" and offers nothing. It needs the clean-up flow (step 8b) or an "adopt" button.
 - QR codes: a second code requested after Cancel works (tested 2026-11-04). Still unknown: how long a code stays valid, and whether an earlier code keeps waiting.
@@ -107,7 +103,6 @@
 - Tried in a browser on 2026-11-04 on a copy of the database with the real logs, by the author's report: it looked right, and no full numbers or IDs were seen.
 
 ### Security review (2026-11-04, first pass)
-- See [security-review.md](reference/security-review.md). To check: the programs behind ports 8443 and 33785, whether the daemon on port 8000 asks for a login, SSH password logins and any firewall rules, a vulnerability scan of the Python packages.
 - Regular database backup (daily, keep 14, owner-only). The Signal keys and the audio are deliberately not part of it.
 - The console's certificate expires on 4 November 2027. Renew it with `python3 console/manage.py make-cert` and restart the service.
 - The Pi's time zone is Europe/London. Harmless for the console (it has its own setting) but worth setting to Berlin for consistency.
@@ -131,7 +126,7 @@
 ### README and publishing ideas (2026-11-05)
 - README: include the most important architecture diagrams (the current Mermaid versions, not the old PNGs in `docs/architecture/images/`).
 - README: a video of Reachy with the app working.
-- Safening of the app, before publishing: cybersecurity and data privacy. Starts from the security review and the final cybersec recheck at the end of the roadmap (ports, SSH, passwordless sudo, firewall, vulnerability scan, daemon API without a login, app lifecycle) and from "Deeper safety hardening" under General.
+- Safening of the app, before publishing: a full cybersecurity and data-privacy re-check (kept privately).
 
 ### Facts found on the robot (2026-11-05)
 - The framework's own settings server takes only the host and port from `custom_app_url` and has no certificate option. An app can set `dont_start_webserver = True` and serve its own page, so the console can serve HTTPS on the announced address. The daemon reads `custom_app_url` from the app's `main.py` with a pattern, so it must be a plain string in that file. Whether Reachy Mini Control opens a self-signed https page is still untested.
@@ -164,16 +159,12 @@
 
 - [x] 60 s stop: root cause found (Control stops apps with an unreachable web address), landing page as workaround, bug filed. See docs/architecture/reachy-app-poc.md.
 - [ ] After a Control release that fixes #272: retest and decide whether to remove the landing page.
-- [ ] Privacy recheck: add port 9080 (landing page, static, no data) next to 9443; confirm nothing else listens (7860, 8042).
-- [ ] Camera: Control shows a live camera view; check whether the camera runs without Control (script 52), and what --no-camera really does under the daemon.
 - [ ] R1 acceptance still open: startup switch plus antenna touch with Control closed, restart test, removal test.
-- [ ] Privacy recheck: confirm the landing page (http, 9080) is not reachable from the internet (router) and still static.
 
 ## R1 closed (2026-11-06): app usable. Open items, in priority order
 - [ ] Voice path: the log shows `huggingface_realtime`. Find out where Lola's audio goes, which account/key is used, and whether that is acceptable (privacy recheck, high priority before unsupervised use).
-- [ ] Transcripts (`role=user` / `role=assistant`) are written to the daemon log on the SD card. Decide retention or switch it off.
+- [ ] Conversation log: decide retention on the robot.
 - [ ] Left antenna: "Overload Error" x7 and one automatic motor reboot during test 7. Check timestamps vs touches; touch gently, do not hold.
-- [ ] Camera: confirm the camera stays off under the daemon (the robot said it could not see), and what Control's live view does.
 - [ ] Removal test (uninstall cleanly, Signal data and DB untouched): do before publishing as a Reachy Mini app.
 - [ ] Final cybersecurity and data-privacy recheck.
 - Voice path fact (log 2026-11-06): the conversation app uses a Hugging Face hosted realtime service (pollen-robotics-reachy-mini-realtime-url.hf.space). Decide if acceptable for Lola's audio.
@@ -186,9 +177,8 @@
 - [ ] IN PROGRESS: say "sleep" to send the robot to sleep. Built 2026-11-06 as the tool `sleep_robot`: it asks first ("do you want me to go to sleep?"), the code refuses a confirmation unless an ask came 3 to 90 s before, and anyone may use it. Pollen's `go_to_sleep` also stops the app, so nothing listens while the robot sleeps; an antenna touch wakes it. To check once on the robot: is the goodnight audible before it sleeps, does it wake and start again.
 
 ## For later (2026-11-06)
-- [ ] Publish Lola-Bla as a Reachy Mini app. Before that, re-check cybersecurity and data privacy in full (console, the light page, Signal keys, backups, transcripts in the journal, the Hugging Face voice path, repo visibility).
+- [ ] Publish Lola-Bla as a Reachy Mini app. Before that, re-check cybersecurity and data privacy in full (kept privately).
 - [ ] Improve the docs in the repo: brand styling, and diagrams that show up properly (rendered images, consistent look).
 - [x] Docs, round 2 (2026-11-06, to be read through by the author): a short friendly guide for people with a Reachy Mini (what you need, set it up, link Signal and approve family, daily use, is it safe, fixing common problems), in `docs/use/`.
 - [ ] Make a short promo video for the app. Do not show the author's face.
 - [ ] GitHub settings for the public repo (author, a few clicks): secret scanning with push protection, Dependabot alerts, private vulnerability reporting (Settings, Code security). `SECURITY.md` and `.github/dependabot.yml` are in the repo.
-- [ ] Change the robot's SSH password, then update docs/reference/security-review.md and docs/use/safe-and-private.md.

@@ -54,7 +54,7 @@ Normally http is not acceptable; here it is a deliberate, temporary exception:
   attack the console directly anyway, and the family does not use this page (Control stays closed).
 - All real content (Signal, login) stays on the https console (9443). The daemon API (8000) is plain http too.
 - An https address with a self-signed certificate was stopped by Control; a trusted certificate is not possible for `.local`.
-- Reachable only on the home network (router firewall, to be confirmed in the privacy recheck). Exists only while the app runs.
+- Reachable only on the home network. Exists only while the app runs.
 - Console link on the page kept on purpose (Control's "Open" button leads to the console).
 Revisit when Control no longer stops apps with an unreachable address (#272).
 

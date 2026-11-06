@@ -16,7 +16,7 @@ Use GitHub's private reporting: open the **Security** tab of this repository, th
 
 - The Reachy Mini robot software, its daemon and the Control app (Pollen Robotics): please report those to Pollen
 - Signal, signal-cli-rest-api and Hugging Face
-- Attacks that need access to the owner's home network: they are known and written down in [the security review](docs/reference/security-review.md)
+- Attacks that need access to the owner's home network
 
 ## What to expect
 
