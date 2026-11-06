@@ -49,5 +49,20 @@ class Guide(unittest.TestCase):
             self.assertNotRegex(text, r"hf_[A-Za-z0-9]{20,}", f.name)
 
 
+class RepoSafety(unittest.TestCase):
+    def test_there_is_a_security_policy_and_dependency_alerts(self):
+        policy = (ROOT / "SECURITY.md").read_text(encoding="utf-8")
+        self.assertIn("Report a vulnerability", policy)
+        self.assertNotRegex(policy, r"\+\d{6,}|hf_[A-Za-z0-9]{20,}")
+        updates = (ROOT / ".github" / "dependabot.yml").read_text(encoding="utf-8")
+        for needle in ('package-ecosystem: "pip"', 'directory: "/console"', 'directory: "/app"'):
+            self.assertIn(needle, updates)
+
+    def test_gitignore_keeps_private_data_out(self):
+        ignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+        for needle in (".env", "*.wav", "signal-data/", "recordings/"):
+            self.assertIn(needle, ignore)
+
+
 if __name__ == "__main__":
     unittest.main()
