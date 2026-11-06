@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lola-console"
+version = "0.1.0"
+description = "Lola-Bla family console"
+requires-python = ">=3.11"
+dependencies = [
+    "starlette>=0.52.1",
+    "uvicorn>=0.30",
+    "Jinja2>=3.1.6",
+    "python-multipart>=0.0.20",
+    "cryptography>=43",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lola_console*"]
+
+[tool.setuptools.package-data]
+lola_console = ["templates/*", "static/*", "static/fonts/*"]

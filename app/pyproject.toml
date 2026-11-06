@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lola_bla"
+version = "0.1.0"
+description = "Lola-Bla: family voice messages for the Reachy Mini"
+requires-python = ">=3.11"
+keywords = ["reachy-mini-app"]
+dependencies = [
+    "reachy-mini>=1.14.0",
+    "reachy-mini-conversation-app",
+    "lola-console",
+    "requests",
+]
+
+[project.entry-points."reachy_mini_apps"]
+lola_bla = "lola_bla.main:LolaBla"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]

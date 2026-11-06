@@ -30,3 +30,9 @@ config.json
 *.bak
 *.pem
 id_*
+
+*.egg-info/
+
+# files the conversation app may write next to our app code
+app/src/lola_bla/.env
+app/src/lola_bla/*.json
