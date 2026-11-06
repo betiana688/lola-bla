@@ -14,8 +14,11 @@ console does not listen. The link opens in a new tab because the console refuses
 inside another page (frame protection, on purpose).
 """
 
+import base64
+import hashlib
 import html
 import importlib.util
+import ipaddress
 import os
 import re
 import threading
@@ -54,8 +57,23 @@ def console_port() -> str:
     return value if value.isdigit() else DEFAULT_CONSOLE_PORT
 
 
-def viewer_host(header) -> str:
-    """The host name or IP address from the Host header, or the fallback if it looks wrong."""
+def usable_ip(value):
+    """The address this server was reached on, if it is a real network address, else None."""
+    try:
+        ip = ipaddress.ip_address(str(value))
+    except ValueError:
+        return None
+    if ip.is_loopback or ip.is_unspecified or ip.is_multicast or ip.is_link_local:
+        return None
+    return f"[{ip}]" if ip.version == 6 else str(ip)
+
+
+def viewer_host(header, local_ip=None) -> str:
+    """Where to send the viewer: the address this server was reached on (it always works, it is
+    never the viewer's text), else the Host header if it looks right, else the fallback name."""
+    ip = usable_ip(local_ip)
+    if ip:
+        return ip
     if not header or len(header) > 260:
         return FALLBACK_HOST
     text = header.strip()
@@ -71,8 +89,8 @@ def viewer_host(header) -> str:
     return host
 
 
-def console_url(host_header=None) -> str:
-    return f"https://{viewer_host(host_header)}:{console_port()}/"
+def console_url(host_header=None, local_ip=None) -> str:
+    return f"https://{viewer_host(host_header, local_ip)}:{console_port()}/"
 
 
 EMBEDDED_REFERERS = ("http://tauri.localhost", "https://tauri.localhost", "tauri://localhost")
@@ -83,6 +101,11 @@ ASSETS = {  # the only other things this server hands out: the brand fonts and t
     "/mark.svg": ("lola-bla-mark.svg", "image/svg+xml"),
 }
 DESCRIPTION = "Lola hears and answers Signal voice messages."
+# The one script on this page: it selects the address and copies it. No network, no data.
+SCRIPT = ("document.getElementById('copy').onclick=function(){var a=document.getElementById('addr'),"
+          "r=document.createRange(),s=getSelection(),ok=false;r.selectNodeContents(a);s.removeAllRanges();"
+          "s.addRange(r);try{ok=document.execCommand('copy')}catch(e){}"
+          "this.textContent=ok?'copied \u2713':'press Ctrl+C'};")
 
 CSS = """
 @font-face { font-family: "Fraunces"; src: url("/fonts/Fraunces.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
@@ -114,6 +137,8 @@ p { margin: 0.6rem 0; }
 .button:hover { background: var(--berenjena); }
 .address { font-weight: 500; word-break: break-all; }
 .muted { color: var(--muted); }
+button.copy { font: inherit; font-size: 0.9rem; min-height: 40px; padding: 0.2rem 1rem; background: var(--card); color: var(--ink); border: 3px solid var(--ink); border-radius: 999px; cursor: pointer; }
+button.copy:hover { background: var(--banana); color: var(--berenjena); }
 :focus-visible { outline: 4px solid var(--ink); outline-offset: 3px; }
 """
 
@@ -133,21 +158,25 @@ def signal_line(signal_linked) -> str:
     return f'<h2>signal</h2><p><span class="chip">{word}</span></p>'
 
 
-def page(host_header=None, referer=None, signal_linked=None) -> bytes:
-    url = html.escape(console_url(host_header), quote=True)
-    kind = variant(referer)
+def page(host_header=None, referer=None, signal_linked=None, local_ip=None) -> bytes:
+    url = html.escape(console_url(host_header, local_ip), quote=True)
+    safe = "<p>one more click, for your safety: settings live on a password-protected page and open in a safe tab.</p>"
     button = (f'<p><a class="button" href="{url}" target="_blank" rel="noopener noreferrer">'
               "open settings</a></p>")
-    where = f'<p class="muted"><span class="address">{url}</span></p>'
-    arrow = "<p>settings: click the <b>arrow icon</b> at the top right.</p>"
-    way = {"embedded": arrow, "browser": button + where, "other": button + arrow}[kind]
+    where = ('<p class="muted">or paste this in your browser:<br>'
+             f'<span class="address" id="addr">{url}</span> <button type="button" class="copy" id="copy">copy</button></p>')
+    arrow = ("<p>settings are protected by a password, so they open in your browser, a safe place. "
+             "Two quick clicks: the <b>arrow icon</b> at the top right, then <b>open settings</b>. \u2665</p>")
+    embedded = variant(referer) == "embedded"
+    way = arrow if embedded else safe + button + where
+    script = "" if embedded else f"<script>{SCRIPT}</script>"
     return (
         '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lola-Bla</title>'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
         f"<style>{CSS}</style></head><body>"
         '<header><img src="/mark.svg" alt=""><span class="word">Lola-Bla</span></header>'
         f"<main><h1>talk to abuelo <em>without a phone.</em></h1><p>{html.escape(DESCRIPTION)}</p>"
-        f"{signal_line(signal_linked)}{way}</main></body></html>"
+        f"{signal_line(signal_linked)}{way}</main>{script}</body></html>"
     ).encode("utf-8")
 
 
@@ -170,7 +199,9 @@ def asset(path):
         return None
 
 
-CSP = "default-src 'none'; style-src 'unsafe-inline'; font-src 'self'; img-src 'self'"
+SCRIPT_HASH = base64.b64encode(hashlib.sha256(SCRIPT.encode()).digest()).decode()
+CSP = (f"default-src 'none'; style-src 'unsafe-inline'; font-src 'self'; img-src 'self'; "
+       f"script-src 'sha256-{SCRIPT_HASH}'")
 
 
 def signal_status():
@@ -202,7 +233,8 @@ class Handler(BaseHTTPRequestHandler):
             if self.server.request_count <= LOGGED_REQUESTS:
                 print(f"[lola_bla] landing page: {self.command} from {self.client_address[0]}", flush=True)
                 print(f"[lola_bla] landing page headers: {describe_headers(self.headers)}", flush=True)
-            body = page(self.headers.get("Host"), self.headers.get("Referer"), signal_status())
+            body = page(self.headers.get("Host"), self.headers.get("Referer"), signal_status(),
+                        self.connection.getsockname()[0])
             ctype = "text/html; charset=utf-8"
             self._send(body, ctype, "no-store")
         if with_body:

@@ -98,7 +98,6 @@ class LandingPage(unittest.TestCase):
         self.assertIn(b"talk to abuelo", body)
         self.assertIn(b'href="https://reachy-mini.local:9443/"', body)
         self.assertNotIn(b"<form", body)
-        self.assertNotIn(b"<script", body)
         self.assertIn("default-src 'none'", r.getheader("Content-Security-Policy"))
 
     def test_link_follows_the_address_the_viewer_used_and_opens_in_a_new_tab(self):
@@ -107,7 +106,7 @@ class LandingPage(unittest.TestCase):
         self.assertIn(b'href="https://192.168.178.75:9443/"', body)
         self.assertIn(b'target="_blank"', body)
         self.assertIn(b'rel="noopener noreferrer"', body)
-        self.assertIn(b'class="address">https://192.168.178.75:9443/</span>', body)
+        self.assertIn(b'id="addr">https://192.168.178.75:9443/</span>', body)
 
     def test_a_new_robot_address_is_followed_at_once(self):
         _, _, port = self.start()
@@ -119,7 +118,7 @@ class LandingPage(unittest.TestCase):
         _, _, port = self.start()
         r, body = self.ask(port, "GET", host='evil"><script>alert(1)</script>')
         self.assertEqual(r.status, 200)
-        self.assertNotIn(b"<script", body)
+        self.assertNotIn(b"alert(1)", body)
         self.assertNotIn(b"evil", body)
         self.assertIn(b'href="https://reachy-mini.local:9443/"', body)
 
@@ -159,6 +158,7 @@ class LandingPage(unittest.TestCase):
         r, body = self.ask(port, "GET", host="192.168.178.75:9080", referer="http://tauri.localhost/")
         self.assertEqual(r.status, 200)
         self.assertNotIn(b"<a ", body)
+        self.assertNotIn(b"<script", body)
         self.assertIn(b"arrow icon", body)
         self.assertNotIn(b"9443", body)  # nothing to type, nothing that can go stale
 
@@ -173,7 +173,7 @@ class LandingPage(unittest.TestCase):
         _, _, port = self.start()
         _, body = self.ask(port, "GET", host="10.0.0.5:9080", referer="http://example.org/")
         self.assertIn(b'class="button"', body)
-        self.assertIn(b"arrow icon", body)
+        self.assertIn(b'id="copy"', body)
 
     def test_the_referer_only_changes_the_display_never_redirects(self):
         _, _, port = self.start()
@@ -208,8 +208,43 @@ class LandingPage(unittest.TestCase):
         csp = r.getheader("Content-Security-Policy")
         for part in ("default-src 'none'", "font-src 'self'", "img-src 'self'"):
             self.assertIn(part, csp)
-        self.assertNotIn("script", csp)
+        self.assertNotIn("script-src 'unsafe", csp)
         self.assertEqual(r.getheader("Cache-Control"), "no-store")
+
+
+class ReachedOn(unittest.TestCase):
+    def test_the_address_the_server_was_reached_on_wins_over_the_host_header(self):
+        self.assertEqual(landing.console_url("reachy-mini.local:9080", "192.168.178.75"), "https://192.168.178.75:9443/")
+        self.assertEqual(landing.console_url("0.0.0.0:9080", "10.1.2.3"), "https://10.1.2.3:9443/")
+        self.assertEqual(landing.console_url(None, "2001:db8::5"), "https://[2001:db8::5]:9443/")
+
+    def test_loopback_unspecified_or_garbage_falls_back_to_the_host_header(self):
+        for bad in (None, "", "127.0.0.1", "0.0.0.0", "::1", "::", "169.254.1.1", "evil\"><x", "224.0.0.1"):
+            self.assertEqual(landing.console_url("192.168.178.9:9080", bad), "https://192.168.178.9:9443/", bad)
+            self.assertEqual(landing.console_url(None, bad), "https://reachy-mini.local:9443/", bad)
+
+    def test_the_page_link_uses_it(self):
+        text = landing.page("whatever:9080", None, None, "192.168.178.75").decode()
+        self.assertIn('href="https://192.168.178.75:9443/"', text)
+
+
+class CopyScript(unittest.TestCase):
+    def test_csp_allows_exactly_this_script_and_nothing_else(self):
+        self.assertIn(f"script-src 'sha256-{landing.SCRIPT_HASH}'", landing.CSP)
+        self.assertNotIn("unsafe-inline'; font", landing.CSP.split("style-src")[0])
+        self.assertEqual(landing.CSP.count("script-src"), 1)
+        self.assertNotIn("unsafe-eval", landing.CSP)
+
+    def test_the_script_cannot_send_anything_anywhere(self):
+        for word in ("fetch", "XMLHttpRequest", "WebSocket", "sendBeacon", "location", "cookie", "eval", "src", "http"):
+            self.assertNotIn(word, landing.SCRIPT, word)
+
+    def test_only_the_browser_page_has_the_one_script(self):
+        browser = landing.page("10.0.0.5:9080", None).decode()
+        inside = landing.page("10.0.0.5:9080", "http://tauri.localhost/").decode()
+        self.assertEqual(browser.count("<script"), 1)
+        self.assertIn(landing.SCRIPT, browser)
+        self.assertEqual(inside.count("<script"), 0)
 
 
 class SignalLine(unittest.TestCase):
@@ -258,8 +293,8 @@ class Look(unittest.TestCase):
                          ("#F7D33E", "#7B4FC4", "#2A1640", "#FFF8E7"))
 
     def test_no_gradients_or_shadows_and_no_scripts(self):
-        for bad in ("gradient", "shadow", "<script"):
-            self.assertNotIn(bad, landing.CSS + landing.page().decode())
+        for bad in ("gradient", "shadow"):
+            self.assertNotIn(bad, landing.CSS)
 
 
 if __name__ == "__main__":
