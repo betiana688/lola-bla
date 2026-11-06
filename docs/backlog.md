@@ -182,5 +182,9 @@
 - [ ] Decide: console on IPv6 so https://reachy-mini.local:9443/ works too (check FRITZ!Box IPv6 inbound first). Needed for family phones and for publishing.
 
 ## Console redesign: two doors (2026-11-06)
-- [ ] Build the light page in Control (status + link to the full console), brand styling kept. Spec and build order: docs/architecture/console-redesign.md. Next step: log what Control sends with its requests.
-- [ ] Later: say "sleep" (or similar) to send the robot to sleep. Pollen's conversation app already loads a `go_to_sleep` tool for the Lola profile (seen in the log). Check what it does, whether the app keeps running while asleep, and that an antenna touch wakes the robot again.
+- [x] Light page in Control built (2026-11-06): brand look, "settings", status chip, copy button. Spec and build order: docs/architecture/console-redesign.md. Step 6 (docs and README to the final wording) is still open.
+- [ ] IN PROGRESS: say "sleep" to send the robot to sleep. Built 2026-11-06 as the tool `sleep_robot`: it asks first ("do you want me to go to sleep?"), the code refuses a confirmation unless an ask came 3 to 90 s before, and anyone may use it. Pollen's `go_to_sleep` also stops the app, so nothing listens while the robot sleeps; an antenna touch wakes it. To check once on the robot: is the goodnight audible before it sleeps, does it wake and start again.
+
+## For later (2026-11-06)
+- [ ] Publish Lola-Bla as a Reachy Mini app. Before that, re-check cybersecurity and data privacy in full (console, the light page, Signal keys, backups, transcripts in the journal, the Hugging Face voice path, repo visibility).
+- [ ] Improve the docs in the repo: brand styling, and diagrams that show up properly (rendered images, consistent look).

@@ -30,7 +30,7 @@ chmod 700 "$CLONE/local_data"
 for f in messaging_executor.py messaging_agent.py background_sync.py; do
   ln -sfn "$REPO/app/local_data/$f" "$CLONE/local_data/$f"
 done
-for f in handle_messaging_task.py test_mic_handoff.py; do
+for f in handle_messaging_task.py test_mic_handoff.py sleep_robot.py; do
   ln -sfn "$REPO/app/tools/$f" "$CLONE/src/reachy_mini_conversation_app/tools/$f"
 done
 ln -sfn "$REPO/profiles/lola/profile.md" "$CLONE/profiles/lola/profile.md"

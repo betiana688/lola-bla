@@ -201,6 +201,26 @@ flowchart TD
     end
 ```
 
+### `sleep_robot.py` (`SleepRobot.__call__`)
+
+Sends the robot to sleep, but only after asking and hearing a clear yes. Lola's profile lists this tool instead of Pollen's `go_to_sleep`. Pollen's tool puts the robot to sleep and stops the app (the audio stream is closed, so nothing listens while it sleeps); an antenna touch wakes the robot and starts the app again.
+
+```mermaid
+flowchart TD
+    A[Someone asks Reachy to sleep] --> B[sleep_robot, confirmed false]
+    B --> C[The tool remembers the ask<br/>and returns: ask first]
+    C --> D[Reachy asks: do you want<br/>me to go to sleep?]
+    D --> E{Clear yes?}
+    E -->|no or unclear| F[Nothing happens, play on]
+    E -->|yes| G[Short goodnight, then<br/>sleep_robot, confirmed true]
+    G --> H{Ask 3 to 90 s ago?}
+    H -->|no| C
+    H -->|yes| I[Pollen go_to_sleep: robot sleeps,<br/>audio closed, app stops]
+    I --> J[Antenna touch wakes the robot<br/>and starts Lola-Bla]
+```
+
+Safety: the first call can never sleep. A confirmation needs an ask at least 3 s and at most 90 s earlier, so a confirmation chained straight after the ask is refused. What the code cannot check is that a person really said yes; that part is the personality's rule (`## SLEEP` in the profile).
+
 ### `test_mic_handoff.py`
 
 Test tool that proved the mic handoff works.
