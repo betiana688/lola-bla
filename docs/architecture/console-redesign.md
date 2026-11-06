@@ -63,7 +63,11 @@ flowchart LR
 | Control embeds the page at `custom_app_url` in its panel | screenshot of the panel showing the landing page | observed |
 | A link with `target="_blank"` inside that panel did nothing | tested 2026-11-06 | observed |
 | Control's arrow icon opens the page in the system browser | tested 2026-11-06 (the page opened in Chrome) | observed |
-| Which web origin Control uses for its embedded view | not recorded yet | unknown |
+| Control's web origin (Windows build, Control 0.9.38) | request log of the landing page, 2026-11-06: `Referer: http://tauri.localhost/` on Control's requests, `Origin: http://tauri.localhost` on one fetch | observed |
+| Control shows the page in an iframe | its page request carries `Referer: http://tauri.localhost/` and no `Origin` (inferred, not proven) | inferred |
+| No `Sec-Fetch-*` headers arrive over plain HTTP, so the server cannot tell iframe from top-level that way | none in the log | observed |
+| The arrow icon opens the page top-level in the system default browser (Edge here), with no `Referer` | request log, 2026-11-06 | observed |
+| Clicking the link inside the panel does nothing, with or without `target="_blank"` | tested twice, 2026-11-06 | observed |
 
 Pollen's documentation (SDK, "Building and publishing apps") says: set `custom_app_url` for a settings page, the example is plain HTTP on port 8042, and "Reachy Mini Control opens this UI as soon as the server answers". It does not say whether the page is embedded or opened in a window, whether HTTPS is allowed, or anything about frame headers.
 
@@ -120,6 +124,13 @@ Replaces `landing.py`. Same port (9080, `LOLA_LANDING_PORT`) and the same addres
 - Inside Control's panel the link does nothing (observed). So the page also shows the address as text and says to use Control's arrow icon, which opens the page in the browser, where the link works. A copy button is optional and only added if it works inside the panel.
 - Fallback to learn: whether any link form opens the system browser from inside the panel. To test once, not to loop.
 
+**Two variants of the same page (decided from the step 2 log)**
+- Embedded in Control (the request carries `Referer: http://tauri.localhost/`, the origin Control uses on Windows): no dead button. Status, description, and a clear instruction: "Open the full console: click the arrow icon at the top right of this panel", with the address as text.
+- Opened in the browser (no `Referer`): the same status and a working button "Open the full console", with the address as text.
+- Anything else: the button and the instruction together.
+- Only the display changes. The `Referer` is never trusted for anything else.
+- No automatic redirect to the console, ever: Control probes this address, and a redirect to a self-signed HTTPS page would make the probe fail and stop the app.
+
 **Security rules for Door 1**
 - `GET` and `HEAD` only. No forms, no cookies, no sessions, no script that sends data.
 - Data comes from a read-only database connection with fixed queries (one boolean: Signal linked yes or no). A failure shows "unknown" and never an error text. Nothing is written.
@@ -139,7 +150,7 @@ Unchanged. HTTPS with the self-signed certificate, login, lockout, CSRF, frame p
 ## Build order (each step verified before the next)
 
 1. Spec approved (this page).
-2. Log what Control sends with its requests (`Referer`, `Sec-Fetch-Dest`) for the first requests, to learn its origin and whether the panel is an iframe. Built 2026-11-06 (`landing.py` logs `Origin`, `Referer`, `Sec-Fetch-*` and `User-Agent` of the first 15 requests, never cookies or credentials). The result is added after one run from Control.
+2. Log what Control sends with its requests (`Referer`, `Sec-Fetch-Dest`) for the first requests, to learn its origin and whether the panel is an iframe. Built 2026-11-06 (`landing.py` logs `Origin`, `Referer`, `Sec-Fetch-*` and `User-Agent` of the first 15 requests, never cookies or credentials). Done: the result is in the facts table above.
 3. Light page: layout and styling with static content, tests.
 4. Light page: status data (read-only), tests.
 5. Hand-off: try the link forms inside Control once, settle the fallback text.
