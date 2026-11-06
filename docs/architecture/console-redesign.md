@@ -68,6 +68,7 @@ flowchart LR
 | No `Sec-Fetch-*` headers arrive over plain HTTP, so the server cannot tell iframe from top-level that way | none in the log | observed |
 | The arrow icon opens the page top-level in the system default browser (Edge here), with no `Referer` | request log, 2026-11-06 | observed |
 | Clicking the link inside the panel does nothing, with or without `target="_blank"` | tested twice, 2026-11-06 | observed |
+| The window the arrow icon opens is drawn by Control itself, with no address bar and no tabs: a link clicked there does nothing either; typing the address in a real browser works | tester report, 2026-11-06 | observed |
 
 Pollen's documentation (SDK, "Building and publishing apps") says: set `custom_app_url` for a settings page, the example is plain HTTP on port 8042, and "Reachy Mini Control opens this UI as soon as the server answers". It does not say whether the page is embedded or opened in a window, whether HTTPS is allowed, or anything about frame headers.
 
@@ -129,6 +130,8 @@ Replaces `landing.py`. Same port (9080, `LOLA_LANDING_PORT`) and the same addres
 - Opened in the browser (no `Referer`): the same status and a working button "Open the full console", with the address as text.
 - Anything else: the button and the instruction together.
 - Only the display changes. The `Referer` is never trusted for anything else.
+- Changed 2026-11-06: the window the arrow icon opens is a plain window drawn by Control, where links do nothing. The browser variant therefore also shows the address with a copy button. It is the page's only script: it selects and copies the visible address, it has no network access, and the page's `Content-Security-Policy` allows exactly that script by its hash.
+- The link and the address come from the address the page was reached on (the connection), not from the `Host` header; the header is only a fallback.
 - No automatic redirect to the console, ever: Control probes this address, and a redirect to a self-signed HTTPS page would make the probe fail and stop the app.
 
 **Security rules for Door 1**
@@ -152,8 +155,8 @@ Unchanged. HTTPS with the self-signed certificate, login, lockout, CSRF, frame p
 1. Spec approved (this page).
 2. Log what Control sends with its requests (`Referer`, `Sec-Fetch-Dest`) for the first requests, to learn its origin and whether the panel is an iframe. Built 2026-11-06 (`landing.py` logs `Origin`, `Referer`, `Sec-Fetch-*` and `User-Agent` of the first 15 requests, never cookies or credentials). Done: the result is in the facts table above.
 3. Light page: layout and styling with static content, tests. DONE (brand look, two variants by Referer, fonts and mark served by the page itself, contrast tests).
-4. Light page: status data (read-only), tests.
-5. Hand-off: try the link forms inside Control once, settle the fallback text.
+4. Light page: status data (read-only), tests. DONE (`signal_status()`: read-only connection, one fixed query on the account status, a yes or no, never the number; hidden when unreadable).
+5. Hand-off: DONE. A link does not work in either Control view, so the address with a one-click copy button is the way in. The button stays for real browsers.
 6. Update this page and the README of the app.
 
 ## Open questions

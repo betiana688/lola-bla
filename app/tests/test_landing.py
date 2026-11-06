@@ -6,7 +6,9 @@ import http.client
 import io
 import os
 import re
+import sqlite3
 import socket
+import tempfile
 import threading
 import unittest
 from unittest import mock
@@ -188,7 +190,7 @@ class LandingPage(unittest.TestCase):
         text = body.decode()
         self.assertIn("Lola hears and answers Signal voice messages.", text)
         self.assertNotRegex(text, r"\+\d{6,}")
-        self.assertNotIn("signal</h2>", text)  # hidden while the status is unknown
+        self.assertNotRegex(text, r"\+\d")
 
     def test_brand_assets_are_served_and_nothing_else_is(self):
         _, _, port = self.start()
@@ -245,6 +247,66 @@ class CopyScript(unittest.TestCase):
         self.assertEqual(browser.count("<script"), 1)
         self.assertIn(landing.SCRIPT, browser)
         self.assertEqual(inside.count("<script"), 0)
+
+
+class SignalStatus(unittest.TestCase):
+    def make_db(self, rows):
+        folder = tempfile.mkdtemp()
+        self.addCleanup(lambda: __import__("shutil").rmtree(folder, ignore_errors=True))
+        path = os.path.join(folder, "lola.db")
+        con = sqlite3.connect(path)
+        con.execute("CREATE TABLE accounts (id INTEGER PRIMARY KEY, signal_number TEXT, status TEXT)")
+        con.executemany("INSERT INTO accounts (signal_number, status) VALUES (?, ?)", rows)
+        con.commit()
+        con.close()
+        return path
+
+    def test_linked_not_linked_and_no_account(self):
+        self.assertIs(landing.signal_status(self.make_db([("+49000000001", "linked")])), True)
+        self.assertIs(landing.signal_status(self.make_db([("+49000000001", "unlinked")])), False)
+        self.assertIs(landing.signal_status(self.make_db([])), False)
+
+    def test_unknown_when_the_database_cannot_be_read(self):
+        self.assertIsNone(landing.signal_status("/nonexistent/folder/lola.db"))
+        folder = tempfile.mkdtemp()
+        self.addCleanup(lambda: __import__("shutil").rmtree(folder, ignore_errors=True))
+        empty = os.path.join(folder, "empty.db")
+        sqlite3.connect(empty).close()  # a database without the accounts table
+        self.assertIsNone(landing.signal_status(empty))
+
+    def test_reading_never_changes_the_database(self):
+        path = self.make_db([("+49000000001", "linked")])
+        before = open(path, "rb").read()
+        landing.signal_status(path)
+        self.assertEqual(open(path, "rb").read(), before)
+
+    def test_it_is_a_read_only_connection(self):
+        path = self.make_db([("+49000000001", "linked")])
+        con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        with self.assertRaises(sqlite3.OperationalError):
+            con.execute("UPDATE accounts SET status = 'x'")
+        con.close()
+
+    def test_the_page_shows_the_status_from_the_database_and_never_the_number(self):
+        for rows, word in (([("+49123456789", "linked")], "linked</span>"), ([("+49123456789", "unlinked")], "not linked yet")):
+            path = self.make_db(rows)
+            with mock.patch.dict(os.environ, {"LOLA_DB": path}):
+                stop, ready, evt = threading.Event(), {}, threading.Event()
+                th = threading.Thread(target=landing.serve, args=(stop,), daemon=True,
+                                      kwargs={"port": 0, "host": "127.0.0.1",
+                                              "on_ready": lambda p: (ready.update(port=p), evt.set())})
+                th.start()
+                self.assertTrue(evt.wait(5))
+                c = http.client.HTTPConnection("127.0.0.1", ready["port"], timeout=5)
+                c.request("GET", "/")
+                text = c.getresponse().read().decode()
+                c.close()
+                stop.set()
+                th.join(5)
+            self.assertIn("signal</h2>", text)
+            self.assertIn(word, text)
+            self.assertNotIn("49123456789", text)
+            self.assertNotIn("+49", text)
 
 
 class SignalLine(unittest.TestCase):

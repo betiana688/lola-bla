@@ -21,7 +21,9 @@ import importlib.util
 import ipaddress
 import os
 import re
+import sqlite3
 import threading
+from urllib.parse import quote
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -204,9 +206,22 @@ CSP = (f"default-src 'none'; style-src 'unsafe-inline'; font-src 'self'; img-src
        f"script-src 'sha256-{SCRIPT_HASH}'")
 
 
-def signal_status():
-    """True, False, or None when unknown. Filled in by step 4 (read-only, never the number)."""
-    return None
+DEFAULT_DB = Path.home() / "lola-bla-agents" / "reachy_mini_conversation_app" / "local_data" / "lola.db"
+
+
+def signal_status(path=None):
+    """Is the robot linked to Signal? True, False, or None when it cannot be read.
+    Read-only connection, one fixed query, a yes or no. The phone number is never selected."""
+    path = Path(path or os.environ.get("LOLA_DB", str(DEFAULT_DB)))
+    try:
+        con = sqlite3.connect(f"file:{quote(str(path))}?mode=ro", uri=True, timeout=1)
+        try:
+            row = con.execute("SELECT status FROM accounts LIMIT 1").fetchone()
+        finally:
+            con.close()
+    except (sqlite3.Error, OSError):
+        return None
+    return bool(row and row[0] == "linked")
 
 
 class Handler(BaseHTTPRequestHandler):
