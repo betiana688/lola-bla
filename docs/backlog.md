@@ -180,3 +180,7 @@
 - [ ] IN PROGRESS: link from the landing page to the console shows "reachy-mini.local refused to connect" inside Control. Main goal: publish as a Reachy Mini app, so this must work for any user.
 - [x] Console link from Control: landing page link now follows the viewer's address (IP) and opens in a new tab.
 - [ ] Decide: console on IPv6 so https://reachy-mini.local:9443/ works too (check FRITZ!Box IPv6 inbound first). Needed for family phones and for publishing.
+
+## Console redesign: two doors (2026-11-06)
+- [ ] Build the light page in Control (status + link to the full console), brand styling kept. Spec and build order: docs/architecture/console-redesign.md. Next step: log what Control sends with its requests.
+- [ ] Later: say "sleep" (or similar) to send the robot to sleep. Pollen's conversation app already loads a `go_to_sleep` tool for the Lola profile (seen in the log). Check what it does, whether the app keeps running while asleep, and that an antenna touch wakes the robot again.

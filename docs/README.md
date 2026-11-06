@@ -16,6 +16,7 @@
 - [Overview](architecture/overview.md): system, two agents, mic handoff, privacy rules, decisions
 - [Conversation app](architecture/conversation-app.md): check messages, Signal sync, states, module diagrams
 - [Configuration console](architecture/console.md): the design (login, password recovery, Signal link and unlink) and what is built so far
+- [Console redesign: two doors](architecture/console-redesign.md): decision and spec for the light page in Control and the full console in a browser
 - [Data model](architecture/data-model.md)
 - [Publishing as a Reachy Mini app](architecture/publishing.md): how apps work, what differs today, switching to another app
 - [How the Pi, the repo and GitHub connect](architecture/pi-repo-connection.md): where files and data live, and what is pushed

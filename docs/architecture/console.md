@@ -259,3 +259,7 @@ The home page ends with a "danger zone" card holding one switch: start Lola-Bla 
 ## How the startup app really starts
 
 Found with the proof of concept: see `reachy-app-poc.md`. The robot boots asleep; the startup app starts when the robot is woken up or when an antenna is touched, never at power-on. The home page says so under the switch.
+
+## Redesign: two doors (2026-11-06)
+
+The console does not open inside Reachy Mini Control, and it will not be weakened to do so. Decision and spec: [console-redesign.md](console-redesign.md). Door 1 is a light page in Control with status and a link to the full console, Door 2 is this console in a browser.
