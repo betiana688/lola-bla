@@ -176,3 +176,5 @@
 - [ ] Camera: confirm the camera stays off under the daemon (the robot said it could not see), and what Control's live view does.
 - [ ] Removal test (uninstall cleanly, Signal data and DB untouched): do before publishing as a Reachy Mini app.
 - [ ] Final cybersecurity and data-privacy recheck.
+- Voice path fact (log 2026-11-06): the conversation app uses a Hugging Face hosted realtime service (pollen-robotics-reachy-mini-realtime-url.hf.space). Decide if acceptable for Lola's audio.
+- [ ] IN PROGRESS: link from the landing page to the console shows "reachy-mini.local refused to connect" inside Control. Main goal: publish as a Reachy Mini app, so this must work for any user.
