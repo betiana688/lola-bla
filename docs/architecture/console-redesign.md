@@ -95,7 +95,7 @@ flowchart LR
   CTRL["Control (embedded view)"] -->|"HTTP, nothing secret"| L["Door 1: light page :9080<br/>status + link"]
   BR["Browser"] -->|"HTTPS, password"| C["Door 2: full console :9443"]
   L -.->|"link or Control's arrow icon<br/>opens Door 2 in the browser"| BR
-  L --> RO[("lola.db<br/>read-only counts")]
+  L --> RO[("lola.db<br/>read-only: linked yes or no")]
   C --> DB[("lola.db")]
 ```
 
@@ -107,14 +107,12 @@ Replaces `landing.py`. Same port (9080, `LOLA_LANDING_PORT`) and the same addres
 - Answers `HEAD` and `GET` with 200 and never redirects, because Control probes the address and stops the app when it fails.
 - No `X-Frame-Options` and no `frame-ancestors` restriction on this page, because it is meant to be shown inside Control. It holds nothing worth clicking over.
 
-**Shows (proposed, to confirm)**
-- "Lola-Bla is running".
-- Whether Signal is linked: yes or no.
-- Number of approved groups.
-- Time of the last successful message sync.
+**Shows (confirmed by the author, 2026-11-06)**
+- "Lola-Bla is running", with a short description of the app: what it does, in a sentence or two.
+- Whether Signal is linked: yes or no. Never the phone number.
 - A prominent button "Open the full console", and the address as plain text beneath it, so it can be typed or copied.
 
-**Never shows:** names, phone numbers, messages, audio, log text, or anything from `audit_log`.
+**Never shows:** any user information: names, phone numbers, messages, audio, log text, or anything from `audit_log`.
 
 **The link to the full console**
 - Built from the address the viewer used (the robot's IP as Control reaches it), validated, with `reachy-mini.local` as fallback. This is already done in today's landing page and stays.
@@ -124,7 +122,7 @@ Replaces `landing.py`. Same port (9080, `LOLA_LANDING_PORT`) and the same addres
 
 **Security rules for Door 1**
 - `GET` and `HEAD` only. No forms, no cookies, no sessions, no script that sends data.
-- Data comes from a read-only database connection with fixed queries (counts, one boolean, one timestamp). A failure shows "unknown" and never an error text. Nothing is written.
+- Data comes from a read-only database connection with fixed queries (one boolean: Signal linked yes or no). A failure shows "unknown" and never an error text. Nothing is written.
 - Same hardening headers as today: `Cache-Control: no-store`, `nosniff`, `Referrer-Policy: no-referrer`, a strict Content Security Policy.
 - Host header validated before it is used (already done).
 - The page is reachable only on the home network and only while the app runs. Confirmed again in the privacy recheck.
@@ -141,7 +139,7 @@ Unchanged. HTTPS with the self-signed certificate, login, lockout, CSRF, frame p
 ## Build order (each step verified before the next)
 
 1. Spec approved (this page).
-2. Log what Control sends with its requests (`Referer`, `Sec-Fetch-Dest`) for the first requests, to learn its origin and whether the panel is an iframe.
+2. Log what Control sends with its requests (`Referer`, `Sec-Fetch-Dest`) for the first requests, to learn its origin and whether the panel is an iframe. Built 2026-11-06 (`landing.py` logs `Origin`, `Referer`, `Sec-Fetch-*` and `User-Agent` of the first 15 requests, never cookies or credentials). The result is added after one run from Control.
 3. Light page: layout and styling with static content, tests.
 4. Light page: status data (read-only), tests.
 5. Hand-off: try the link forms inside Control once, settle the fallback text.
@@ -149,6 +147,5 @@ Unchanged. HTTPS with the self-signed certificate, login, lockout, CSRF, frame p
 
 ## Open questions
 
-- What the light page may show (the list above is a proposal).
 - Whether any link form opens the system browser from inside Control's panel.
 - IPv6 for the console, and the FRITZ!Box setting for inbound IPv6.

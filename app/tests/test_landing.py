@@ -1,7 +1,9 @@
 """The landing page: plain http, answers HEAD and GET with 200, no redirect, no data.
 The console link follows the address the viewer used (IP or name), opens in a new tab."""
 
+import contextlib
 import http.client
+import io
 import os
 import socket
 import threading
@@ -9,6 +11,30 @@ import unittest
 from unittest import mock
 
 from lola_bla import landing
+
+
+class WatchedHeaders(unittest.TestCase):
+    def test_lists_only_the_watched_headers(self):
+        m = http.client.HTTPMessage()
+        m["Referer"] = "http://tauri.localhost/"
+        m["Sec-Fetch-Dest"] = "iframe"
+        m["Cookie"] = "secret=1"
+        m["Authorization"] = "Bearer topsecret"
+        text = landing.describe_headers(m)
+        self.assertIn("Referer=http://tauri.localhost/", text)
+        self.assertIn("Sec-Fetch-Dest=iframe", text)
+        self.assertNotIn("secret", text)
+        self.assertNotIn("Bearer", text)
+
+    def test_values_are_cleaned_and_shortened(self):
+        m = http.client.HTTPMessage()
+        m["User-Agent"] = "a\tb" + "x" * 300
+        text = landing.describe_headers(m)
+        self.assertTrue(text.startswith("User-Agent=a?b"))
+        self.assertEqual(len(text), len("User-Agent=") + 120)
+
+    def test_says_so_when_nothing_is_watched(self):
+        self.assertEqual(landing.describe_headers(http.client.HTTPMessage()), "(none of the watched headers)")
 
 
 class ViewerHost(unittest.TestCase):
@@ -94,6 +120,21 @@ class LandingPage(unittest.TestCase):
         self.assertFalse(t.is_alive())
         with self.assertRaises(OSError):
             socket.create_connection(("127.0.0.1", port), timeout=1)
+
+    def test_logs_how_the_page_was_asked_for_but_never_cookies(self):
+        _, _, port = self.start()
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+            c.request("GET", "/", headers={"Referer": "http://tauri.localhost/", "Sec-Fetch-Dest": "iframe",
+                                             "Cookie": "secret=1"})
+            c.getresponse().read()
+            c.close()
+        text = out.getvalue()
+        self.assertIn("landing page headers:", text)
+        self.assertIn("Referer=http://tauri.localhost/", text)
+        self.assertIn("Sec-Fetch-Dest=iframe", text)
+        self.assertNotIn("secret", text)
 
     def test_busy_port_raises_instead_of_hanging(self):
         busy = socket.socket()

@@ -24,6 +24,19 @@ LOGGED_REQUESTS = 15  # log only the first requests, so the journal does not flo
 _NAME = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?")
 _IPV6 = re.compile(r"\[[0-9A-Fa-f:.]{2,45}\]")
 _UNUSABLE = {"0.0.0.0", "[::]"}
+# Diagnostic: how does Reachy Mini Control ask for this page? Never cookies or credentials.
+LOGGED_HEADERS = ("Origin", "Referer", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "Sec-Fetch-Site", "User-Agent")
+
+
+def describe_headers(headers) -> str:
+    """The few watched headers of a request, cleaned and shortened. Nothing else is ever logged."""
+    parts = []
+    for name in LOGGED_HEADERS:
+        value = headers.get(name)
+        if value:
+            clean = "".join(c if c.isprintable() else "?" for c in value)[:120]
+            parts.append(f"{name}={clean}")
+    return " | ".join(parts) or "(none of the watched headers)"
 
 
 def port_from_env() -> int:
@@ -77,6 +90,7 @@ class Handler(BaseHTTPRequestHandler):
         self.server.request_count = getattr(self.server, "request_count", 0) + 1
         if self.server.request_count <= LOGGED_REQUESTS:
             print(f"[lola_bla] landing page: {self.command} from {self.client_address[0]}", flush=True)
+            print(f"[lola_bla] landing page headers: {describe_headers(self.headers)}", flush=True)
         body = page(self.headers.get("Host"))
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
