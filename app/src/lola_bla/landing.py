@@ -82,8 +82,7 @@ ASSETS = {  # the only other things this server hands out: the brand fonts and t
     "/fonts/DMMono-Medium.ttf": ("fonts/DMMono-Medium.ttf", "font/ttf"),
     "/mark.svg": ("lola-bla-mark.svg", "image/svg+xml"),
 }
-DESCRIPTION = ("Family voice messages for the Reachy Mini. Lola hears Signal voice messages "
-               "from family and friends you approved, and answers them by voice.")
+DESCRIPTION = "Lola hears and answers Signal voice messages."
 
 CSS = """
 @font-face { font-family: "Fraunces"; src: url("/fonts/Fraunces.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
@@ -138,11 +137,9 @@ def page(host_header=None, referer=None, signal_linked=None) -> bytes:
     url = html.escape(console_url(host_header), quote=True)
     kind = variant(referer)
     button = (f'<p><a class="button" href="{url}" target="_blank" rel="noopener noreferrer">'
-              "open the family console</a></p>")
-    where = (f'<p class="muted">or type this address in your browser:<br><span class="address">{url}</span></p>')
-    arrow = ('<p>open the family console: click the <b>arrow icon at the top right</b> of this panel. '
-             "It opens in your browser.</p>"
-             f'<p class="muted">or type this address in your browser:<br><span class="address">{url}</span></p>')
+              "open settings</a></p>")
+    where = f'<p class="muted"><span class="address">{url}</span></p>'
+    arrow = "<p>settings: click the <b>arrow icon</b> at the top right.</p>"
     way = {"embedded": arrow, "browser": button + where, "other": button + arrow}[kind]
     return (
         '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lola-Bla</title>'
@@ -150,7 +147,7 @@ def page(host_header=None, referer=None, signal_linked=None) -> bytes:
         f"<style>{CSS}</style></head><body>"
         '<header><img src="/mark.svg" alt=""><span class="word">Lola-Bla</span></header>'
         f"<main><h1>talk to abuelo <em>without a phone.</em></h1><p>{html.escape(DESCRIPTION)}</p>"
-        f"{signal_line(signal_linked)}<h2>family console</h2>{way}</main></body></html>"
+        f"{signal_line(signal_linked)}{way}</main></body></html>"
     ).encode("utf-8")
 
 

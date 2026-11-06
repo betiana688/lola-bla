@@ -109,6 +109,12 @@ class LandingPage(unittest.TestCase):
         self.assertIn(b'rel="noopener noreferrer"', body)
         self.assertIn(b'class="address">https://192.168.178.75:9443/</span>', body)
 
+    def test_a_new_robot_address_is_followed_at_once(self):
+        _, _, port = self.start()
+        for ip in ("192.168.178.75", "192.168.178.99", "10.1.2.3"):
+            _, body = self.ask(port, "GET", host=f"{ip}:9080")
+            self.assertIn(f'href="https://{ip}:9443/"'.encode(), body)
+
     def test_hostile_host_header_cannot_inject_into_the_page(self):
         _, _, port = self.start()
         r, body = self.ask(port, "GET", host='evil"><script>alert(1)</script>')
@@ -154,7 +160,7 @@ class LandingPage(unittest.TestCase):
         self.assertEqual(r.status, 200)
         self.assertNotIn(b"<a ", body)
         self.assertIn(b"arrow icon", body)
-        self.assertIn(b"https://192.168.178.75:9443/", body)
+        self.assertNotIn(b"9443", body)  # nothing to type, nothing that can go stale
 
     def test_in_a_browser_the_page_has_the_button_and_the_address(self):
         _, _, port = self.start()
@@ -180,7 +186,7 @@ class LandingPage(unittest.TestCase):
         _, _, port = self.start()
         _, body = self.ask(port, "GET")
         text = body.decode()
-        self.assertIn("Lola hears Signal voice messages", text)
+        self.assertIn("Lola hears and answers Signal voice messages.", text)
         self.assertNotRegex(text, r"\+\d{6,}")
         self.assertNotIn("signal</h2>", text)  # hidden while the status is unknown
 
