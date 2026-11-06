@@ -168,3 +168,11 @@
 - [ ] Camera: Control shows a live camera view; check whether the camera runs without Control (script 52), and what --no-camera really does under the daemon.
 - [ ] R1 acceptance still open: startup switch plus antenna touch with Control closed, restart test, removal test.
 - [ ] Privacy recheck: confirm the landing page (http, 9080) is not reachable from the internet (router) and still static.
+
+## R1 closed (2026-11-06): app usable. Open items, in priority order
+- [ ] Voice path: the log shows `huggingface_realtime`. Find out where Lola's audio goes, which account/key is used, and whether that is acceptable (privacy recheck, high priority before unsupervised use).
+- [ ] Transcripts (`role=user` / `role=assistant`) are written to the daemon log on the SD card. Decide retention or switch it off.
+- [ ] Left antenna: "Overload Error" x7 and one automatic motor reboot during test 7. Check timestamps vs touches; touch gently, do not hold.
+- [ ] Camera: confirm the camera stays off under the daemon (the robot said it could not see), and what Control's live view does.
+- [ ] Removal test (uninstall cleanly, Signal data and DB untouched): do before publishing as a Reachy Mini app.
+- [ ] Final cybersecurity and data-privacy recheck.
