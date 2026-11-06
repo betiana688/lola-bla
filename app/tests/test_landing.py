@@ -5,6 +5,7 @@ import contextlib
 import http.client
 import io
 import os
+import re
 import socket
 import threading
 import unittest
@@ -71,9 +72,12 @@ class LandingPage(unittest.TestCase):
         self.addCleanup(lambda: (stop.set(), t.join(5)))
         return stop, t, ready["port"]
 
-    def ask(self, port, method, path="/", host=None):
+    def ask(self, port, method, path="/", host=None, referer=None):
         c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
-        c.request(method, path, headers={"Host": host} if host else {})
+        headers = {"Host": host} if host else {}
+        if referer:
+            headers["Referer"] = referer
+        c.request(method, path, headers=headers)
         r = c.getresponse()
         body = r.read()
         c.close()
@@ -91,7 +95,7 @@ class LandingPage(unittest.TestCase):
         _, _, port = self.start()
         r, body = self.ask(port, "GET", host="reachy-mini.local:9080")
         self.assertEqual(r.status, 200)
-        self.assertIn(b"Lola-Bla is running", body)
+        self.assertIn(b"talk to abuelo", body)
         self.assertIn(b'href="https://reachy-mini.local:9443/"', body)
         self.assertNotIn(b"<form", body)
         self.assertNotIn(b"<script", body)
@@ -103,7 +107,7 @@ class LandingPage(unittest.TestCase):
         self.assertIn(b'href="https://192.168.178.75:9443/"', body)
         self.assertIn(b'target="_blank"', body)
         self.assertIn(b'rel="noopener noreferrer"', body)
-        self.assertIn(b"<b>https://192.168.178.75:9443/</b>", body)
+        self.assertIn(b'class="address">https://192.168.178.75:9443/</span>', body)
 
     def test_hostile_host_header_cannot_inject_into_the_page(self):
         _, _, port = self.start()
@@ -143,6 +147,113 @@ class LandingPage(unittest.TestCase):
         self.addCleanup(busy.close)
         with self.assertRaises(OSError):
             landing.serve(threading.Event(), port=busy.getsockname()[1], host="127.0.0.1")
+
+    def test_inside_control_the_page_has_no_dead_button_but_says_where_to_click(self):
+        _, _, port = self.start()
+        r, body = self.ask(port, "GET", host="192.168.178.75:9080", referer="http://tauri.localhost/")
+        self.assertEqual(r.status, 200)
+        self.assertNotIn(b"<a ", body)
+        self.assertIn(b"arrow icon", body)
+        self.assertIn(b"https://192.168.178.75:9443/", body)
+
+    def test_in_a_browser_the_page_has_the_button_and_the_address(self):
+        _, _, port = self.start()
+        _, body = self.ask(port, "GET", host="192.168.178.75:9080")
+        self.assertIn(b'class="button"', body)
+        self.assertNotIn(b"arrow icon", body)
+        self.assertIn(b"https://192.168.178.75:9443/", body)
+
+    def test_unknown_referer_gets_both(self):
+        _, _, port = self.start()
+        _, body = self.ask(port, "GET", host="10.0.0.5:9080", referer="http://example.org/")
+        self.assertIn(b'class="button"', body)
+        self.assertIn(b"arrow icon", body)
+
+    def test_the_referer_only_changes_the_display_never_redirects(self):
+        _, _, port = self.start()
+        for ref in (None, "http://tauri.localhost/", "http://evil.example/"):
+            r, _ = self.ask(port, "HEAD", referer=ref)
+            self.assertEqual(r.status, 200)
+            self.assertIsNone(r.getheader("Location"))
+
+    def test_page_has_the_description_and_no_user_info(self):
+        _, _, port = self.start()
+        _, body = self.ask(port, "GET")
+        text = body.decode()
+        self.assertIn("Lola hears Signal voice messages", text)
+        self.assertNotRegex(text, r"\+\d{6,}")
+        self.assertNotIn("signal</h2>", text)  # hidden while the status is unknown
+
+    def test_brand_assets_are_served_and_nothing_else_is(self):
+        _, _, port = self.start()
+        r, body = self.ask(port, "GET", "/fonts/Fraunces.ttf")
+        self.assertEqual((r.status, r.getheader("Content-Type")), (200, "font/ttf"))
+        self.assertGreater(len(body), 10000)
+        r, body = self.ask(port, "GET", "/mark.svg")
+        self.assertEqual(r.getheader("Content-Type"), "image/svg+xml")
+        for path in ("/fonts/../../../etc/passwd", "/fonts/other.ttf", "/etc/passwd", "/console"):
+            r, body = self.ask(port, "GET", path)
+            self.assertEqual(r.status, 200)
+            self.assertTrue(body.startswith(b"<!doctype html>"), path)
+
+    def test_headers_allow_only_own_fonts_and_images(self):
+        _, _, port = self.start()
+        r, _ = self.ask(port, "GET")
+        csp = r.getheader("Content-Security-Policy")
+        for part in ("default-src 'none'", "font-src 'self'", "img-src 'self'"):
+            self.assertIn(part, csp)
+        self.assertNotIn("script", csp)
+        self.assertEqual(r.getheader("Cache-Control"), "no-store")
+
+
+class SignalLine(unittest.TestCase):
+    def test_shows_linked_or_not_and_hides_when_unknown(self):
+        self.assertEqual(landing.signal_line(None), "")
+        self.assertIn("linked</span>", landing.signal_line(True))
+        self.assertIn("not linked yet", landing.signal_line(False))
+
+    def test_the_page_shows_the_status_without_a_number(self):
+        text = landing.page("10.0.0.5:9080", None, True).decode()
+        self.assertIn("signal</h2>", text)
+        self.assertNotRegex(text, r"\+\d{6,}")
+
+
+def _luminance(hex_colour):
+    h = hex_colour.lstrip("#")
+    parts = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    parts = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in parts]
+    return 0.2126 * parts[0] + 0.7152 * parts[1] + 0.0722 * parts[2]
+
+
+def _ratio(a, b):
+    hi, lo = sorted((_luminance(a), _luminance(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+class Look(unittest.TestCase):
+    def theme(self, dark):
+        light = dict(re.findall(r"--([\w-]+):\s*(#[0-9A-Fa-f]{6})", landing.CSS.split("@media")[0]))
+        if not dark:
+            return light
+        dark_block = landing.CSS.split("@media (prefers-color-scheme: dark)")[1].split("}")[0]
+        return {**light, **dict(re.findall(r"--([\w-]+):\s*(#[0-9A-Fa-f]{6})", dark_block))}
+
+    def test_text_is_readable_in_light_and_dark(self):
+        pairs = [("ink", "card"), ("ink", "page"), ("muted", "card"), ("link", "card"),
+                 ("btn-text", "btn-bg"), ("header-ink", "header-bg"), ("chip-ink", "chip-bg")]
+        for dark in (False, True):
+            t = self.theme(dark)
+            for fg, bg in pairs:
+                self.assertGreaterEqual(_ratio(t[fg], t[bg]), 4.5, f"dark={dark}: {fg} on {bg}")
+
+    def test_brand_colours_are_the_brand_colours(self):
+        t = self.theme(False)
+        self.assertEqual((t["banana"], t["violeta"], t["berenjena"], t["crema"]),
+                         ("#F7D33E", "#7B4FC4", "#2A1640", "#FFF8E7"))
+
+    def test_no_gradients_or_shadows_and_no_scripts(self):
+        for bad in ("gradient", "shadow", "<script"):
+            self.assertNotIn(bad, landing.CSS + landing.page().decode())
 
 
 if __name__ == "__main__":

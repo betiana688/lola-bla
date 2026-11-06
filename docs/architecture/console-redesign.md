@@ -151,7 +151,7 @@ Unchanged. HTTPS with the self-signed certificate, login, lockout, CSRF, frame p
 
 1. Spec approved (this page).
 2. Log what Control sends with its requests (`Referer`, `Sec-Fetch-Dest`) for the first requests, to learn its origin and whether the panel is an iframe. Built 2026-11-06 (`landing.py` logs `Origin`, `Referer`, `Sec-Fetch-*` and `User-Agent` of the first 15 requests, never cookies or credentials). Done: the result is in the facts table above.
-3. Light page: layout and styling with static content, tests.
+3. Light page: layout and styling with static content, tests. DONE (brand look, two variants by Referer, fonts and mark served by the page itself, contrast tests).
 4. Light page: status data (read-only), tests.
 5. Hand-off: try the link forms inside Control once, settle the fallback text.
 6. Update this page and the README of the app.
