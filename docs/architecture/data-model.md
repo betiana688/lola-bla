@@ -11,6 +11,7 @@ All data lives in `lola.db` (SQLite), shared by the conversation app and the con
 - **AUDIT_LOG**: every read and write of private data.
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 erDiagram
   USER ||--|| ACCOUNT : "owns (1:1 for now)"
   ACCOUNT ||--o{ GROUP : "has approved"

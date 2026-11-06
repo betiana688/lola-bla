@@ -65,10 +65,12 @@ On top of that: only the family administrator (me) can access the underlying dat
 
 ## Status
 
-- ✅ Reading messages
-- ✅ Recording and sending replies
+- ✅ Reading messages, and recording and sending replies
 - ✅ Natural conversation, performance, and safety guardrails
-- 🔨 **A web-based configuration console**: signing in over HTTPS, changing the password and linking Signal are built; managing groups and contacts and viewing logs come next. Until then, approvals are managed by hand.
+- ✅ The configuration console: sign in, change password, link and unlink Signal, approve groups and contacts, read the logs, start Lola-Bla when the robot wakes up
+- ✅ Runs as a Reachy Mini app (`lola_bla`): a light page inside Reachy Mini Control, the full console in your browser
+- ✅ Say "sleep" (in English, Spanish or German): Lola asks first, then goes to sleep; an antenna touch wakes her and starts the app
+- 🔨 Before publishing: a full security and privacy re-check, and the docs for people who only want to use it
 
 ## Running it
 
@@ -103,8 +105,8 @@ The script clones Pollen's app at the commit we run, applies our two-line patch,
    ( umask 177; printf '%s' "$T" > ~/lola-bla-agents/reachy_mini_conversation_app/local_data/hf_token ); unset T
    hf auth login
    ```
-4. Add your approved groups and contacts. For now that is done with `sqlite3` (see [docs/reference/database.md](docs/reference/database.md)); the console pages for it are coming.
-5. Start the app:
+4. Add your approved groups and contacts on the console's Groups and Contacts pages. (The same can be done with `sqlite3`: see [docs/reference/database.md](docs/reference/database.md).)
+5. Start the app from the command line. As the Reachy Mini app `lola_bla` you can instead start it in Reachy Mini Control, or let an antenna touch start it (see [app/README.md](app/README.md)):
    ```bash
    cd ~/lola-bla-agents/reachy_mini_conversation_app
    REACHY_MINI_CUSTOM_PROFILE=lola reachy-mini-conversation-app --no-camera
@@ -115,7 +117,7 @@ The script clones Pollen's app at the commit we run, applies our two-line patch,
 - The console cannot yet unlink Signal, manage groups and contacts, or show logs: approvals are still managed by hand
 - The console password minimum is short on purpose (5 characters); the sign-in lockout (5 tries, 15 minutes) is the protection
 - The messaging assistant needs Hugging Face credits; without them a simple local fallback keeps messaging working
-- Not yet a Reachy Mini app: it is installed by script and started by hand (see docs/architecture/publishing.md)
+- Not yet published: it runs as a Reachy Mini app (`lola_bla`) but is installed from this repo, not from the app store (see docs/architecture/publishing.md)
 - The live conversation's cloud service has no published data-retention statement that I could find (see the privacy section above)
 - Fixed maximum recording length (30s), with automatic stop after ~5 seconds of silence
 - Two small local patches to the underlying conversation engine are kept as a patch file (`app/patches`) and are not yet upstreamed

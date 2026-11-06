@@ -1,6 +1,6 @@
 # Console
 
-The config console for Lola-Bla (Story 3). Built step by step; this folder currently holds step 5, the command-line tool that creates the first console user and resets a password. The web pages come next.
+The config console for Lola-Bla (Story 3). The pages (sign in, password, Signal, groups, contacts, logs) are described in [docs/architecture/console.md](../docs/architecture/console.md). The commands below run on the robot.
 
 | Command | What it does |
 |---|---|

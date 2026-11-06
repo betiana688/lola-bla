@@ -5,8 +5,9 @@ The voice part running on Reachy. Overall design: [architecture.md](overview.md)
 ## Check messages
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 sequenceDiagram
-  actor Child
+  participant Child
   participant CA as Conversational Agent
   participant Tool as MessagingTask.__call__
   participant Exec as messaging_executor.py
@@ -30,6 +31,7 @@ sequenceDiagram
 A background thread inside the app runs this every 2 minutes. `check_messages` syncs by itself only if the last good sync is older than 5 minutes.
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 flowchart TD
     A[Fetch envelopes via /v1/receive] --> B[For each envelope]
     B --> C{Has dataMessage?}
@@ -57,6 +59,7 @@ flowchart TD
 ### Playback
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 stateDiagram-v2
   [*] --> Idle
   Idle --> Playing : group and selection chosen (all / by sender / by timestamp)
@@ -76,6 +79,7 @@ stateDiagram-v2
 ### Recording and sending a reply
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 stateDiagram-v2
   [*] --> Idle
   Idle --> Recording : group chosen, "Send a message"
@@ -98,6 +102,7 @@ stateDiagram-v2
 ### `handle_messaging_task.py` (`MessagingTask.__call__`)
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 flowchart TD
     A[__call__ task_description] --> B[messaging_agent.handle_task<br/>if it raises: Return service_unavailable]
     B --> C{status?}
@@ -134,6 +139,7 @@ flowchart TD
 ### `messaging_agent.py` (`handle_task`)
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 flowchart TD
     A[handle_task task_description] --> B[One-shot LLM call,<br/>SYSTEM_PROMPT + the 6 sub-tools]
     B -.->|call fails: no credits, bad token, no network| FB[Local keyword rules,<br/>cloud skipped for 5 minutes,<br/>when unsure: check only]
@@ -155,6 +161,7 @@ flowchart TD
 ### `messaging_executor.py`
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 flowchart TD
     A1[check_messages] --> AL{Linked?}
     AL -->|no| ALN[Return: not_linked]
@@ -186,6 +193,7 @@ flowchart TD
 > **Prototype only.** This module belongs to the first, local version (`prototype/emotions.py`). In the current app Reachy's expressions come from Pollen's built-in `play_emotion` tool, which the live agent calls itself with an intent such as `happy` or `confused`, and going to sleep is Pollen's `go_to_sleep` tool.
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 flowchart TD
     subgraph S1["play_emotion_async(state_key) - fire and forget"]
     A[Called from speak] --> B{state_key in<br/>EMOTION_MAP?}
@@ -206,6 +214,7 @@ flowchart TD
 Sends the robot to sleep, but only after asking and hearing a clear yes. Lola's profile lists this tool instead of Pollen's `go_to_sleep`. Pollen's tool puts the robot to sleep and stops the app (the audio stream is closed, so nothing listens while it sleeps); an antenna touch wakes the robot and starts the app again.
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 flowchart TD
     A[Someone asks Reachy to sleep] --> B[sleep_robot, confirmed false]
     B --> C[The tool remembers the ask<br/>and returns: ask first]
@@ -226,6 +235,7 @@ Safety: the first call can never sleep. A confirmation needs an ask at least 3 s
 Test tool that proved the mic handoff works.
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 flowchart TD
     A[__call__] --> B[stream_manager._mic_muted = True]
     B --> C[arecord on reachymini_audio_src<br/>- shared dsnoop device, 3s]

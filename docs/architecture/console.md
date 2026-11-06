@@ -12,8 +12,9 @@
 ## Linking and unlinking Signal
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 sequenceDiagram
-  actor B as Betiana
+  participant B as Betiana
   participant C as Config console
   participant A as Signal API
   participant P as Phone (Signal app)
@@ -47,8 +48,9 @@ sequenceDiagram
 Recovery: a reset command on the Pi for now; a one-time code via Signal later (not built yet).
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 sequenceDiagram
-  actor B as Betiana
+  participant B as Betiana
   participant C as Config console
   participant A as Signal API
   participant D as lola.db
@@ -96,6 +98,8 @@ This section describes the console as built, step by step. The sections above ar
 | `/` | Home: counts and links |
 | `/password` | Change password: current password, then the new one twice |
 | `/signal` | Signal account: status, linking and unlinking |
+| `/groups`, `/contacts` | Approved groups and the people in them |
+| `/logs` | Activity and audit logs, read-only |
 | `manage.py create-user`, `reset-password`, `status`, `make-cert` | Run on the Pi |
 | `run.py` | Starts the console over HTTPS on port 9443 (`LOLA_CONSOLE_PORT`) |
 
@@ -122,8 +126,9 @@ The status comes from the Signal API's own answers (`/v1/accounts` and `/v1/devi
 | Unlinking not finished | The robot is marked unlinked here, but the Signal API still has the account (an earlier unlink stopped partway) |
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFF8E7","primaryTextColor":"#2A1640","primaryBorderColor":"#2A1640","lineColor":"#7B4FC4","textColor":"#7B4FC4","secondaryColor":"#F7D33E","tertiaryColor":"#C9B3F2","noteBkgColor":"#F7D33E","noteTextColor":"#2A1640","noteBorderColor":"#2A1640","actorBkg":"#FFF8E7","actorBorder":"#2A1640","actorTextColor":"#2A1640","actorLineColor":"#7B4FC4","signalColor":"#7B4FC4","signalTextColor":"#7B4FC4","labelBoxBkgColor":"#FFF8E7","labelBoxBorderColor":"#2A1640","labelTextColor":"#2A1640","loopTextColor":"#7B4FC4","edgeLabelBackground":"#FFF8E7","clusterBkg":"#C9B3F2","clusterBorder":"#2A1640","titleColor":"#2A1640"}}}%%
 sequenceDiagram
-  actor U as You
+  participant U as You
   participant C as Console
   participant S as Signal API
   participant P as Phone
