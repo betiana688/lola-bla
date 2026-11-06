@@ -57,3 +57,7 @@ Normally http is not acceptable; here it is a deliberate, temporary exception:
 - Reachable only on the home network (router firewall, to be confirmed in the privacy recheck). Exists only while the app runs.
 - Console link on the page kept on purpose (Control's "Open" button leads to the console).
 Revisit when Control no longer stops apps with an unreachable address (#272).
+
+## Acceptance tests (2026-11-06)
+- Test 7 (startup switch + antenna touch, Control closed): app stayed off after daemon restart, started ~3 s after touch, alive 6 min, console and landing page answered, no other computer connected. Lola profile active, robot spoke as Lola, movement OK. Robot could not describe what is in front of it (consistent with --no-camera; verify with script 52).
+- Restart test (full OS reboot): PASS (app off until touch, then alive 2 min).
