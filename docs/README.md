@@ -8,7 +8,8 @@
 
 ### I have a Reachy Mini and want to use it
 
-- [What it does, what you need, and how to install it](../README.md#running-it)
+- [Use Lola-Bla](use/README.md): what you need, get started, daily use, safe and private, when something is off
+- [Install commands](../README.md#running-it)
 - [What leaves the robot, in plain words](../README.md#privacy-what-leaves-the-robot-read-this-before-you-build-one)
 - [Security review](reference/security-review.md): what is reachable, what is protected, what is accepted
 - [Cloud privacy check](reference/cloud-privacy-check.md): what the two cloud services publish about data

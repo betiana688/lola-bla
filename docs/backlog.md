@@ -188,5 +188,5 @@
 ## For later (2026-11-06)
 - [ ] Publish Lola-Bla as a Reachy Mini app. Before that, re-check cybersecurity and data privacy in full (console, the light page, Signal keys, backups, transcripts in the journal, the Hugging Face voice path, repo visibility).
 - [ ] Improve the docs in the repo: brand styling, and diagrams that show up properly (rendered images, consistent look).
-- [ ] Docs, round 2: a short friendly guide for people with a Reachy Mini (what you need, set it up, link Signal and approve family, daily use, is it safe, fixing common problems), in `docs/use/`.
+- [x] Docs, round 2 (2026-11-06, to be read through by the author): a short friendly guide for people with a Reachy Mini (what you need, set it up, link Signal and approve family, daily use, is it safe, fixing common problems), in `docs/use/`.
 - [ ] Make a short promo video for the app.
