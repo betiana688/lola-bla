@@ -163,7 +163,7 @@
 
 ## R1 closed (2026-11-06): app usable. Open items, in priority order
 - [ ] Voice path: the log shows `huggingface_realtime`. Find out where Lola's audio goes, which account/key is used, and whether that is acceptable (privacy recheck, high priority before unsupervised use).
-- [ ] Conversation log: decide retention on the robot.
+- [x] Conversation log: the robot keeps 7 days (2026-11-06).
 - [ ] Left antenna: "Overload Error" x7 and one automatic motor reboot during test 7. Check timestamps vs touches; touch gently, do not hold.
 - [ ] Removal test (uninstall cleanly, Signal data and DB untouched): do before publishing as a Reachy Mini app.
 - [ ] Final cybersecurity and data-privacy recheck.
