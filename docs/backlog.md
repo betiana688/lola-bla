@@ -178,3 +178,5 @@
 - [ ] Final cybersecurity and data-privacy recheck.
 - Voice path fact (log 2026-11-06): the conversation app uses a Hugging Face hosted realtime service (pollen-robotics-reachy-mini-realtime-url.hf.space). Decide if acceptable for Lola's audio.
 - [ ] IN PROGRESS: link from the landing page to the console shows "reachy-mini.local refused to connect" inside Control. Main goal: publish as a Reachy Mini app, so this must work for any user.
+- [x] Console link from Control: landing page link now follows the viewer's address (IP) and opens in a new tab.
+- [ ] Decide: console on IPv6 so https://reachy-mini.local:9443/ works too (check FRITZ!Box IPv6 inbound first). Needed for family phones and for publishing.

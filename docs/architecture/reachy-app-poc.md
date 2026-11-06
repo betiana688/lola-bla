@@ -61,3 +61,13 @@ Revisit when Control no longer stops apps with an unreachable address (#272).
 ## Acceptance tests (2026-11-06)
 - Test 7 (startup switch + antenna touch, Control closed): app stayed off after daemon restart, started ~3 s after touch, alive 6 min, console and landing page answered, no other computer connected. Lola profile active, robot spoke as Lola, movement OK. Robot could not describe what is in front of it (consistent with --no-camera; verify with script 52).
 - Restart test (full OS reboot): PASS (app off until touch, then alive 2 min).
+
+### Console link from Control (2026-11-06)
+
+Clicking the landing page link showed "reachy-mini.local refused to connect" (Control panel and normal Chrome).
+`https://<robot IP>:9443/` works. Cause (theory confirmed by the IP test): the console listens on IPv4 only
+(0.0.0.0) while the PC resolves reachy-mini.local to IPv6. Control reaches the landing page by IP.
+Separate on purpose: the console refuses to be shown inside another page (frame-ancestors 'none', X-Frame-Options DENY).
+Fix: the landing page builds the console link from the Host header the viewer used (validated, fallback
+reachy-mini.local), opens it in a new tab and prints the address as text. Open: console on IPv6 so that the name
+works (needs a router check: FRITZ!Box blocks inbound IPv6 by default, to be confirmed in the privacy recheck).
