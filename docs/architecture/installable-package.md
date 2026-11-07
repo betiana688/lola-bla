@@ -44,7 +44,7 @@ flowchart LR
 
 ## Build order (each step is tested on its own)
 
-1. **Assemble the Space folder with a script:** both packages, the content folder, the modified copy of Pollen's app, `index.html`, `style.css` and the README tag. Test: Pollen's checker passes; install it into a fresh environment on the robot (not the daemon's) and import every package.
+1. **(Built 2026-11-07, `publish/build_space.py`)** **Assemble the Space folder with a script:** both packages, the content folder, the modified copy of Pollen's app, `index.html`, `style.css` and the README tag. Test: Pollen's checker passes; install it into a fresh environment on the robot (not the daemon's) and import every package.
 2. **External content:** set the folders in `run()`. Test: Lola's profile is the active one, her tools are found, `sleep_robot` is listed.
 3. **Data folder:** `LOLA_DATA` with the safe default. Test: the running robot still uses its current data; a fresh one gets an empty database.
 4. **Private release:** publish a private Space, install it from the app list on the robot, start it, stop it.
@@ -53,6 +53,6 @@ flowchart LR
 
 ## Open questions
 
-- If a robot already has Pollen's own conversation app installed, does installing Lola-Bla (which carries a modified copy with the same package name) clash with it? To test with the private release.
+- If a robot already has Pollen's own conversation app installed, does installing Lola-Bla (which carries a modified copy with the same package name) clash with it? For now the user guide recommends uninstalling Pollen's app first. To test with the private release, and solve later.
 - Does Pollen's app (the version the store brings) read the external folders the same way as the pinned commit?
 - Where does the first-run setup of the Signal API container live for a stranger: a guide, or the console?

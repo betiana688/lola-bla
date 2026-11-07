@@ -4,6 +4,8 @@ You do this once, with a computer next to the robot. It takes a while the first 
 
 ## 1. Install
 
+If you have Pollen's own Reachy Mini conversation app installed, uninstall it first. Lola-Bla carries its own modified copy of that app, and the two would get in each other's way.
+
 The commands are in the main README, under [Running it](../../README.md#running-it). They download the app, set up its private folders and create an empty database. Nothing is sent anywhere.
 
 ## 2. Start Signal's helper, and sign in to the settings
