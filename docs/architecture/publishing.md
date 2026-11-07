@@ -75,7 +75,7 @@ What follows from it:
 
 - The package `lola_bla` has the right name, class and entry point. Pollen's checker (`reachy-mini-app-assistant check`) reports one thing missing: the Space's `index.html` landing page.
 - **Known gap, accepted for now:** `reachy-mini-conversation-app` and `lola-console` are not published on a package index, so the store cannot install Lola-Bla on someone else's robot yet. Today it installs from this repository on the author's robot only.
-- **Known gap, accepted for now:** Lola-Bla needs a small patch on Pollen's conversation app (`app/patches/`). It is applied by `app/install.sh`, not by the store. Options when this is tackled: get the change accepted upstream, or fork.
+- **Known gap, accepted for now:** Lola-Bla needs a small patch on Pollen's conversation app (`app/patches/`). It is applied by `app/install.sh`, not by the store. Decided 2026-11-07: fork, as described in [installable-package.md](installable-package.md); ask Pollen to accept the change later.
 - Decisions made: Apache-2.0 license; the cloud assistant stays optional (the local rules work without an account); the first release will be private, to test the whole path before anyone else sees it.
 
 The build order that closes these gaps is in [installable-package.md](installable-package.md).

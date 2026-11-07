@@ -183,3 +183,5 @@
 - [ ] Make a short promo video for the app. Do not show the author's face.
 - [ ] GitHub settings for the public repo (author, a few clicks): secret scanning with push protection, Dependabot alerts, private vulnerability reporting (Settings, Code security). `SECURITY.md` and `.github/dependabot.yml` are in the repo.
 - [ ] Publishing: the two gaps in docs/architecture/publishing.md (dependencies not installable from outside, the patch on Pollen's app), the Space's `index.html`, then a private test release. Decided 2026-11-06: Apache-2.0, optional cloud assistant, private first.
+- [ ] Ask Pollen to accept the two-line patch (not a priority; the author will say when). Until then Lola-Bla carries a modified copy of Pollen's app.
+- [ ] Installable package: build step 1, the script that assembles the private Hugging Face Space (docs/architecture/installable-package.md).
