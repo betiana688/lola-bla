@@ -77,3 +77,5 @@ What follows from it:
 - **Known gap, accepted for now:** `reachy-mini-conversation-app` and `lola-console` are not published on a package index, so the store cannot install Lola-Bla on someone else's robot yet. Today it installs from this repository on the author's robot only.
 - **Known gap, accepted for now:** Lola-Bla needs a small patch on Pollen's conversation app (`app/patches/`). It is applied by `app/install.sh`, not by the store. Options when this is tackled: get the change accepted upstream, or fork.
 - Decisions made: Apache-2.0 license; the cloud assistant stays optional (the local rules work without an account); the first release will be private, to test the whole path before anyone else sees it.
+
+The build order that closes these gaps is in [installable-package.md](installable-package.md).

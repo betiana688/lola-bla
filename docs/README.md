@@ -23,6 +23,7 @@
 - [Console redesign: two doors](architecture/console-redesign.md): the light page in Control and the full console in a browser
 - [Data model](architecture/data-model.md)
 - [Publishing as a Reachy Mini app](architecture/publishing.md): how apps work, what differs today, switching to another app
+- [Installable package (spec)](architecture/installable-package.md): the build order to make Lola-Bla installable from the app list
 - [How the Pi, the repo and GitHub connect](architecture/pi-repo-connection.md)
 - [Development plan](development-plan.md): purpose, stories, how it was built, status
 - [Backlog](backlog.md) and [SBOM](sbom.md)
